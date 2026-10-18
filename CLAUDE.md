@@ -57,3 +57,8 @@ Sistema de respaldo local con rotación (carpeta `Backup/`, ignorada en git):
 - Se conservan solo las **5 copias más recientes**; al crear una nueva se borra la más antigua.
 - Disparadores: "Haz una copia" / "Copia de seguridad", o antes de publicar.
 - Script: skill personal `app-copia_seguridad` (`bash ~/.claude/skills/app-copia_seguridad/scripts/copia_seguridad.sh --root "<carpeta>" --name TamanoMuestral`).
+
+## 8. Publicación
+- Repositorio público `cjgaland/tamano-muestral`; GitHub Pages desde `main` (raíz): https://cjgaland.github.io/tamano-muestral/
+- Pasos para publicar una versión: (1) copia de seguridad; (2) nueva entrada en `NOVEDADES` + `APP_VERSION`; (3) mismos `?v=` en index.html; (4) subir `CACHE_NAME` en sw.js; (5) `node tests/stats.test.mjs`; (6) commit y `git push`. Pages tarda ~1 min. Los usuarios con la app abierta verán «Nueva versión disponible».
+- Comprobado en la web real (v2026.05): el SW cachea los 15 archivos y el aviso de actualización recarga a la versión nueva al pulsar «Actualizar». Solo se recarga si el usuario lo pide (no en la primera instalación).
