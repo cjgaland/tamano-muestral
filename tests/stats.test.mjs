@@ -89,4 +89,14 @@ t("tabla rápida del tema: N=200 y ±10 % → 66; N=50 y ±5 % → 45", () => {
   assert.equal(S.sampleProportion({ conf: 0.95, e: 0.05, p: 0.5, N: 50 }).n, 45);
 });
 
+console.log("\n7. Indicador compuesto de porcentaje simple");
+t("infarto (parte teórica): 28/40 = 70 %; media de porcentajes 63,9 %", () => {
+  const r = S.composite([{ c: 10, o: 12 }, { c: 4, o: 6 }, { c: 4, o: 5 }, { c: 2, o: 4 }, { c: 1, o: 3 }, { c: 7, o: 10 }]);
+  assert.equal(r.sc, 28); assert.equal(r.so, 40); close(r.comp, 0.70, 1e-12); close(r.mean, 0.6389, 1e-4);
+});
+t("EPOC (solucionario de la parte práctica): 68/93 = 73,1 %; media 69,7 %", () => {
+  const r = S.composite([{ c: 17, o: 20 }, { c: 14, o: 20 }, { c: 8, o: 9 }, { c: 16, o: 20 }, { c: 11, o: 18 }, { c: 2, o: 6 }]);
+  close(r.comp, 0.7312, 1e-4); close(r.mean, 0.6972, 1e-4);
+});
+
 console.log(`\n${ok} pruebas superadas.`);

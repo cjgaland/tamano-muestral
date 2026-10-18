@@ -231,9 +231,16 @@
     return Math.min(1, s);
   }
 
+  // Indicador compuesto de porcentaje simple (Saturno, UT19): Σ cumplimientos ÷ Σ oportunidades.
+  // rows = [{ c, o }] con 0 ≤ c ≤ o y o ≥ 1. Devuelve también la media de los porcentajes y el peso de cada criterio.
+  function composite(rows) {
+    const sc = rows.reduce((a, r) => a + r.c, 0), so = rows.reduce((a, r) => a + r.o, 0);
+    return { sc, so, comp: sc / so, mean: rows.reduce((a, r) => a + r.c / r.o, 0) / rows.length, weights: rows.map(r => r.o / so) };
+  }
+
   const api = { ceilN, erfc, normCdf, normInv, zAlpha, lgamma, logChoose, binomPmf, hyperPmf, binomCdf, hyperCdf,
     finiteCorrection, withLoss, sampleProportion, sampleMean, twoProportions, twoMeans,
-    lqas, lqasBestRule, lqasOC, lqasPAccept };
+    lqas, lqasBestRule, lqasOC, lqasPAccept, composite };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.Stats = api;
 })(typeof window !== "undefined" ? window : globalThis);

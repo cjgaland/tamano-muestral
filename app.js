@@ -8,10 +8,16 @@
   const S = window.Stats;
 
   // ---------- Versión y novedades ----------
-  // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en
+  // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.03";
+  const APP_VERSION = "2026.04";
   const NOVEDADES = [
+    { version: "2026.04", fecha: "Octubre 2026", titulo: "Indicador compuesto y «Ponte a prueba»", cambios: [
+      "Nueva calculadora: indicador compuesto de porcentaje simple (Σ cumplimientos ÷ Σ oportunidades), con desglose por criterio y avisos cuando el titular esconde una mala noticia.",
+      "En el inicio: los siete tipos de indicadores, qué hace bueno a un indicador y cuatro preguntas para ponerte a prueba.",
+      "LQAS: «la idea en una imagen», tabla de los planes de Lemeshow frente al cálculo exacto y explicación de la regla del 10 %.",
+      "Una media: por qué la media puede maquillar.",
+      "Contenidos adaptados de la unidad temática de muestreo, LQAS e indicadores del curso de Auditorías."] },
     { version: "2026.03", fecha: "Octubre 2026", titulo: "Explicado fácil", cambios: [
       "Cada calculadora tiene una «Idea clave» y un apartado «Explicado fácil» con analogías y un ejemplo resuelto, en la línea del tema 4 del curso de Auditorías.",
       "LQAS habla el mismo idioma que el curso: estándar, umbral, número de decisión c, α = falsa alarma y β = fuego sin alarma (convención de Saturno).",
@@ -84,6 +90,17 @@
     const Ns = [50, 100, 200, 300, 500, 1000, 2000, 5000, 0], es = [0.05, 0.10, 0.15, 0.20];
     const rows = Ns.map(N => `<tr><td>${N ? nf(N, 0) : "Más de 10.000"}</td>${es.map(e => `<td>${S.sampleProportion({ conf: 0.95, e, p: 0.5, N }).n}</td>`).join("")}</tr>`).join("");
     return `<div class="table-wrap"><table class="mini"><thead><tr><th>Universo (N)</th>${es.map(e => `<th>± ${nf(e * 100, 0)} %</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div><p class="step-note">Casos a revisar para estimar un porcentaje, ya redondeados hacia arriba.</p>`;
+  }
+
+  // Planes de las tablas de Lemeshow del curso frente al plan exacto (convención del curso: α en el estándar)
+  function tablaLemeshow() {
+    const planes = [[85, 60, 20, 16, 11], [85, 60, 10, 24, 17], [90, 75, 20, 33, 26], [90, 75, 10, 49, 40], [95, 80, 20, 22, 19], [95, 80, 10, 34, 30]];
+    const rows = planes.map(([U, L, b, n, c]) => {
+      const bReal = S.lqasPAccept(n, c, 0, L / 100);
+      const r = S.lqas({ pU: U / 100, pL: L / 100, alpha: b / 100, beta: 0.05, N: 0 });
+      return `<tr><td>${U} % / ${L} %</td><td>${b} %</td><td>${n} / ${c}</td><td><b>${nf(bReal * 100, 0)} %</b></td><td>${r.n} / ${r.d}</td></tr>`;
+    }).join("");
+    return `<div class="table-wrap"><table class="mini"><thead><tr><th>Estándar / umbral</th><th>β pedido</th><th>Tabla n / c</th><th>β real de la tabla</th><th>App n / c</th></tr></thead><tbody>${rows}</tbody></table></div><p class="step-note">Todas con α = 5 %. β real calculado de forma exacta (binomial).</p>`;
   }
 
   // ---------- Definición de calculadoras ----------
@@ -176,6 +193,7 @@
           <p>Tiempo medio de espera en Urgencias: σ ≈ 25 minutos, margen ±5 minutos, confianza 95 %:</p>
           <p class="formula">n = 1,96² × 25² ÷ 5² = 96,04 → 97 pacientes</p>
           <p>Con ±10 minutos bastan <b>25</b>. Otra vez: doble de precisión, cuatro veces más trabajo.</p></div>
+        <div class="box box--trampa"><span class="box-tag">Ojo, trampa: la media puede maquillar</span><p>Una espera media de 20 minutos parece buenísima… pero puede haber pacientes esperando tres horas compensados por otros atendidos al instante. Muchas veces es mejor convertir la media en un porcentaje: «% de pacientes que esperan más de 30 minutos». Así sabes cuántos se quedan fuera del límite aceptable (y lo calculas con <a href="#/proporcion">Un porcentaje</a> o con <a href="#/lqas">LQAS</a>).</p></div>
         <div class="box box--trampa"><span class="box-tag">Ojo, trampa</span><p><b>σ y el margen tienen que ir en las mismas unidades</b> (minutos con minutos, días con días). Y si unos pocos casos son larguísimos (esperas de 8 horas), la media engaña: haz antes un pequeño piloto o consulta a un estadístico.</p></div>`,
       fields: [
         F_CONF,
@@ -364,8 +382,11 @@
           <tr><td><b>c</b></td><td>Mínimo de cumplimientos en la muestra para aceptar</td><td>La nota mínima para aprobar</td></tr>
           <tr><td><b>Error α</b></td><td>Sale rojo un servicio que sí cumple el estándar</td><td>Falsa alarma: suena el detector y no hay fuego</td></tr>
           <tr><td><b>Error β</b></td><td>Sale verde un servicio que está en el umbral o peor</td><td>Fuego sin alarma</td></tr>
+          <tr><td><b>Poder (1 − β)</b></td><td>Capacidad de detectar un problema cuando existe</td><td>Lo bueno que es el detector</td></tr>
         </tbody></table></div>
         <p>Lo habitual es <b>α = 5 %</b> y <b>β = 20 % o 10 %</b>. Una falsa alarma hace perder tiempo investigando algo que no falla; un fuego sin alarma deja pasar un problema real. Cuanto más pequeños los errores que aceptas, más casos hay que revisar.</p>
+        <h3>La idea en una imagen</h3>
+        <p>Imagina que el estándar es que fallen como máximo el 15 % de las historias. Si revisamos 15 al azar y de verdad solo falla el 15 %, lo normal es encontrar entre 0 y 5 fallos; encontrar 6 o más ocurriría solo en el 1,7 % de las ocasiones. Así que, si encontramos 6 o más, lo razonable es pensar que el estándar no se cumple. Esa es toda la idea: <b>fijar de antemano una línea (c) y mirar a qué lado cae la muestra</b>.</p>
         <h3>Cómo se hace, en cinco pasos</h3>
         <ol>
           <li><b>Define el lote</b>: por ejemplo, los pacientes atendidos en triaje el último mes.</li>
@@ -392,6 +413,12 @@
           <li>El lote es <b>homogéneo</b>: el mismo criterio durante todo el periodo y el mismo tipo de casos.</li>
           <li>Los casos se eligen <b>al azar</b>.</li>
         </ul>
+        <h3>¿Por qué la app pide más casos que las tablas de Lemeshow?</h3>
+        <p>Las tablas clásicas (adaptadas por Saturno) usan una aproximación. Con muestras pequeñas, el error β real (fuego sin alarma) queda bastante por encima del que anuncian. Esta app hace el cálculo exacto con la distribución binomial, así que cumple el β que pides, a cambio de unos pocos casos más:</p>
+        ${tablaLemeshow()}
+        <p>Las tablas sirven como <b>cribado</b> (semáforo). Si el riesgo para el paciente es alto, usa el plan exacto, una muestra mayor o revisa todos los casos.</p>
+        <h3>¿Y la «regla del 10 %»?</h3>
+        <p>Las tablas suponen un lote grande; por eso se pide que la muestra no pase del 10 % del lote. Si escribes el <b>tamaño del lote (N)</b>, la app usa la distribución hipergeométrica, que es exacta también para lotes pequeños, y esa regla deja de ser necesaria. Ejemplo: con un lote de 150 episodios, estándar 85 %, umbral 65 %, α 5 % y β 20 %, basta revisar <b>24 historias con c = 18</b>; no hace falta revisar los 150.</p>
         <div class="box box--trampa"><span class="box-tag">Ojo, trampa</span><p><b>No mezcles el sentido.</b> c cuenta <b>cumplimientos</b>: si hay menos de c, sale rojo. Si prefieres contar incumplimientos, sale rojo cuando hay más de n − c. Cuenta siempre en el mismo sentido que el estándar.</p></div>`,
       fields: [
         { id: "pU", label: "Estándar (lo que queremos tener)", unit: "%", def: "85", quick: [80, 85, 90, 95],
@@ -457,6 +484,101 @@
           sem, extraHtml: ocChart(n, c, N, pL, pU, aR, bR) + sorteoHtml(r.nFinal, N)
         };
       }
+    },
+
+    // ===================== 6. INDICADOR COMPUESTO =====================
+    // No calcula un tamaño de muestra: resume los resultados de una auditoría con varios criterios.
+    // Porcentaje simple (Saturno, UT19): Σ cumplimientos ÷ Σ oportunidades.
+    {
+      id: "compuesto", short: "Indicador compuesto", title: "Indicador compuesto (porcentaje simple)",
+      q: "¿Has auditado varios criterios y quieres resumirlos en un solo número?",
+      a: "Calculadora del <b>indicador compuesto</b> (porcentaje simple)",
+      what: "Resume en un solo porcentaje varios criterios auditados a la vez (por ejemplo, todo el paquete de valoración al ingreso), y muestra el desglose de cada uno. No calcula cuántos casos revisar: sirve para <b>analizar los resultados</b> de la auditoría.",
+      when: "Úsala cuando cada paciente tiene varios criterios que cumplir y quieres responder a «¿con qué frecuencia recibieron los pacientes una atención de calidad?». Cada criterio se cuenta solo en los casos en los que se aplica.",
+      idea: "El compuesto es como la <b>nota final de la asignatura</b>, hecha con las notas de varios exámenes. Pero ojo: <b>el compuesto es el titular; el desglose, la noticia</b>. Nunca presentes uno sin el otro.",
+      facil: `
+        <h3>El truco: contar oportunidades</h3>
+        <p>No todos los criterios se aplican a todos los pacientes: el consejo antitabaco solo tiene sentido en fumadores. Por eso cada criterio tiene su propio denominador, el número de casos en los que se <b>podía</b> haber actuado bien. Cada una de esas ocasiones es una <b>oportunidad</b>.</p>
+        <p class="formula">Compuesto (%) = Σ cumplimientos de todos los criterios ÷ Σ oportunidades × 100</p>
+        <div class="box box--ejemplo"><span class="box-tag">Ejemplo resuelto: atención al infarto (15 pacientes)</span>
+          <p>Se auditan 15 pacientes y seis criterios (aspirina y β-bloqueantes en las primeras 24 h y al alta, consejo antitabaco y trombolíticos en 30 minutos). Cada criterio se evaluó en un número distinto de pacientes.</p>
+          <p>Solo hemos revisado 15 pacientes, pero hemos contado <b>40 oportunidades</b> de actuar bien, y en <b>28</b> se actuó bien: 28 ÷ 40 = <b>70 %</b>. Pulsa <b>Cargar ejemplo</b> para verlo con el desglose.</p></div>
+        <h3>Para qué sirve</h3>
+        <ul>
+          <li>Da un número fácil de entender y de comparar entre unidades, centros o periodos.</li>
+          <li>Cada paciente aporta varias oportunidades, así que responde a la pregunta general con menos pacientes.</li>
+          <li>El desglose por criterios sigue ahí para saber dónde está el problema.</li>
+        </ul>
+        <div class="box box--trampa"><span class="box-tag">Ojo, trampas</span>
+          <p><b>1. Pesan más los criterios que más se evalúan.</b> En el ejemplo, la aspirina inicial aporta 12 de las 40 oportunidades; el consejo antitabaco, solo 3. No siempre es malo, pero hay que saberlo.</p>
+          <p><b>2. Un buen titular puede esconder una mala noticia.</b> El compuesto dice 70 %, pero el consejo antitabaco está en el 33 %. Enseña siempre el desglose.</p>
+          <p><b>3. No todos los «compuestos» son iguales.</b> La media de los porcentajes (aquí 63,9 %) o el porcentaje de pacientes con todo correcto dan cifras distintas con los mismos datos. Di siempre qué método has usado.</p>
+          <p><b>4. Cuarenta oportunidades no son cuarenta pacientes.</b> Las de un mismo paciente se parecen entre sí: el compuesto gana precisión, pero no tanta como si fueran 40 pacientes distintos.</p></div>`,
+      fields: [],
+      custom: true,
+      defaults: { pac: "", rows: [{ nom: "", cum: "", opo: "" }, { nom: "", cum: "", opo: "" }, { nom: "", cum: "", opo: "" }] },
+      example: { pac: "15", rows: [
+        { nom: "Aspirina en las primeras 24 h", cum: "10", opo: "12" },
+        { nom: "β-bloqueantes en las primeras 24 h", cum: "4", opo: "6" },
+        { nom: "Aspirina al alta", cum: "4", opo: "5" },
+        { nom: "β-bloqueantes al alta", cum: "2", opo: "4" },
+        { nom: "Consejo antitabaco", cum: "1", opo: "3" },
+        { nom: "Trombolíticos en los primeros 30 minutos", cum: "7", opo: "10" }] },
+      exampleText: "Ejemplo (adaptado de Courtney y cols., citado por Saturno, UT19): atención al infarto de miocardio en 15 pacientes, con seis criterios.",
+      formHtml() {
+        const st = state[this.id];
+        const rows = st.rows.map((r, i) => `<div class="cmp-row" data-row="${i}">
+          <div class="cmp-row-head"><span class="cmp-num">${i + 1}</span><input class="cmp-in cmp-nom" data-row="${i}" data-k="nom" type="text" autocomplete="off" placeholder="Criterio ${i + 1} (p. ej. escala de caídas)" aria-label="Nombre del criterio ${i + 1}" value="${esc(r.nom)}" />${st.rows.length > 1 ? `<button type="button" class="icon-btn cmp-del" data-act="cmp-del" data-row="${i}" aria-label="Quitar el criterio ${i + 1}">✕</button>` : ""}</div>
+          <div class="cmp-nums"><label><span>Cumplen</span><input class="cmp-in" data-row="${i}" data-k="cum" type="text" inputmode="numeric" autocomplete="off" value="${esc(r.cum)}" /></label><label><span>Oportunidades</span><input class="cmp-in" data-row="${i}" data-k="opo" type="text" inputmode="numeric" autocomplete="off" value="${esc(r.opo)}" /></label></div></div>`).join("");
+        return `<div class="field"><div class="field-head"><span class="field-label">Criterios auditados</span><button type="button" class="info-btn" data-info="cmp" aria-expanded="false" aria-label="Ayuda: criterios">i</button></div>
+          <p class="help" id="help-cmp" hidden>Para cada criterio escribe cuántos casos lo cumplen y en cuántos se podía aplicar (oportunidades). Si un criterio no se aplica a un paciente (el consejo antitabaco en un no fumador), ese paciente no cuenta en sus oportunidades.</p>
+          <div id="cmp-rows">${rows}</div>
+          <button type="button" class="btn cmp-add" data-act="cmp-add">+ Añadir criterio</button></div>
+          <div class="field"><div class="field-head"><span class="field-label">Pacientes o casos auditados</span><span class="field-opt">(opcional)</span></div>
+          <div class="input-wrap"><input class="cmp-in" data-k="pac" type="text" inputmode="numeric" autocomplete="off" placeholder="opcional" aria-label="Pacientes auditados" value="${esc(st.pac)}" /><span class="input-unit">casos</span></div></div>`;
+      },
+      compute() {
+        const st = state[this.id], E = [], ok = [];
+        const isInt = x => x !== null && Number.isInteger(x) && x >= 0;
+        st.rows.forEach((r, i) => {
+          const c = parseNum(r.cum), o = parseNum(r.opo), nom = r.nom.trim() || `Criterio ${i + 1}`;
+          if (c === null && o === null) return;
+          if (!isInt(c) || !isInt(o)) { E.push({ m: `«${nom}»: cumplen y oportunidades deben ser números enteros (0, 1, 2…).` }); return; }
+          if (o === 0) { E.push({ m: `«${nom}»: las oportunidades deben ser al menos 1.` }); return; }
+          if (c > o) { E.push({ m: `«${nom}»: no puede haber más cumplimientos (${c}) que oportunidades (${o}).` }); return; }
+          ok.push({ nom, c, o, p: c / o });
+        });
+        if (E.length) return { errors: E };
+        if (!ok.length) return { errors: [{ m: "Rellena al menos un criterio con sus cumplimientos y oportunidades.", missing: true }] };
+        const { sc, so, comp, mean: media } = S.composite(ok);
+        const pac = parseNum(st.pac);
+        const peso = r => r.o / so;
+        const pc1 = x => nfix(x * 100, 1) + " %";
+        const lista = a => a.length > 1 ? a.slice(0, -1).join(", ") + " y " + a[a.length - 1] : a[0];
+        const steps = [
+          { t: "Suma de cumplimientos", f: [`Σ cumplimientos = ${ok.map(r => r.c).join(" + ")} = ${sc}`] },
+          { t: "Suma de oportunidades", f: [`Σ oportunidades = ${ok.map(r => r.o).join(" + ")} = ${so}`] },
+          { t: "Indicador compuesto (porcentaje simple)", f: ["Compuesto = Σ cumplimientos ÷ Σ oportunidades × 100", `Compuesto = ${sc} ÷ ${so} × 100 = ${nfix(comp * 100, 1)} %`] },
+          { t: "Para comparar: media de los porcentajes (otro método)", f: [`(${ok.map(r => nfix(r.p * 100, 1)).join(" + ")}) ÷ ${ok.length} = ${nfix(media * 100, 1)} %`], note: "No es el compuesto: da el mismo peso a un criterio con 3 oportunidades que a uno con 12. Por eso las dos cifras no coinciden." }
+        ];
+        const ordenados = ok.slice().sort((a, b) => a.p - b.p);
+        const flojos = ordenados.filter(r => r.p < comp - 0.15);
+        const masPeso = ok.slice().sort((a, b) => b.o - a.o)[0];
+        const warns = [];
+        if (flojos.length) warns.push(`El titular esconde una mala noticia: ${lista(flojos.map(r => `<b>${esc(r.nom)}</b> (${pc1(r.p)})`))} ${flojos.length > 1 ? "están" : "está"} más de 15 puntos por debajo del compuesto. Enséñalo en el desglose.`);
+        if (pac !== null && Number.isFinite(pac) && pac > 0 && ok.some(r => r.o > pac)) warns.push("Algún criterio tiene más oportunidades que pacientes auditados. ¿Se ha contado alguno dos veces?");
+        const notes = [`Pesa más el criterio que más se evalúa: <b>${esc(masPeso.nom)}</b> aporta ${masPeso.o} de las ${so} oportunidades (${pc1(peso(masPeso))} del compuesto).`];
+        if (pac !== null && Number.isFinite(pac) && pac > 0) notes.push(`Con ${nf(pac, 0)} pacientes se han contado ${so} oportunidades. Ojo: ${so} oportunidades no equivalen a ${so} pacientes distintos, porque las de un mismo paciente se parecen entre sí.`);
+        notes.push("Al presentar el resultado, di qué método has usado (porcentaje simple) y acompáñalo siempre del desglose.");
+        const bars = `<div class="chart-card"><h3>Desglose por criterio</h3><div class="cmp-bars">${ok.map(r => `<div class="cmp-bar${r.p < comp - 0.15 ? " cmp-bar--flojo" : ""}"><div class="cmp-bar-top"><span>${esc(r.nom)}</span><b>${pc1(r.p)}</b></div><div class="cmp-track"><div class="cmp-fill" style="width:${(r.p * 100).toFixed(1)}%"></div><div class="cmp-mark" style="left:${(comp * 100).toFixed(1)}%"></div></div><div class="cmp-bar-sub">${r.c} de ${r.o} · peso ${pc1(peso(r))}</div></div>`).join("")}</div><p>La línea vertical marca el compuesto (${pc1(comp)}). En ámbar, los criterios que quedan muy por debajo.</p></div>`;
+        const peor = ordenados[0];
+        return {
+          big: { label: "Indicador compuesto", value: nfix(comp * 100, 1) + " %", sub: `${sc} cumplimientos de ${so} oportunidades` + (pac ? ` · ${nf(pac, 0)} pacientes` : "") },
+          extras: [["Criterios", nf(ok.length, 0)], ["Media de porcentajes", pc1(media)], ["Peor criterio", pc1(peor.p)]],
+          interp: `De cada 100 oportunidades de actuar bien, en <b>${nf(comp * 100, 0)}</b> se actuó bien. Ese es el titular. La noticia está en el desglose: lo más flojo es <b>${esc(peor.nom)}</b> (${pc1(peor.p)})${ordenados[1] ? ` y <b>${esc(ordenados[1].nom)}</b> (${pc1(ordenados[1].p)})` : ""}.`,
+          warns, notes, steps, mini: nfix(comp * 100, 1) + " %", extraHtml: bars
+        };
+      }
     }
   ];
 
@@ -519,6 +641,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
 
   function initState(c) {
     if (state[c.id]) return;
+    if (c.custom) { state[c.id] = JSON.parse(JSON.stringify(c.defaults)); return; }
     const s = {}; c.fields.forEach(f => { s[f.id] = f.def; }); state[c.id] = s;
   }
   function readValues(c) {
@@ -571,7 +694,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       <p class="page-lead no-print" id="example-text" hidden></p>
       <div class="calc-grid">
         <section class="card field-form" aria-label="Parámetros">
-          ${c.fields.map(fieldHtml).join("")}
+          ${c.formHtml ? c.formHtml() : c.fields.map(fieldHtml).join("")}
           <button type="button" class="minibar" id="minibar" data-act="ver"><span>Resultado</span><span class="mb-val" id="mini-val">—</span></button>
         </section>
         <section class="calc-result-col" id="res" aria-live="polite" aria-label="Resultado"></section>
@@ -631,7 +754,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       ${(res.notes || []).map(w => `<div class="note">ℹ ${w}</div>`).join("")}
       ${res.extraHtml || ""}
       <details class="steps"${wasOpen ? " open" : ""}><summary>Desarrollo paso a paso</summary><div class="steps-body"><ol>${stepsHtml}</ol></div></details>
-      ${paramsTable(c)}
+      ${c.custom ? "" : paramsTable(c)}
       <div class="toolbar no-print"><button class="btn" data-act="imprimir">Imprimir / Guardar PDF</button></div>`;
     mini.textContent = res.mini;
   }
@@ -656,6 +779,20 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
         <dt>Estimar frente a clasificar</dt><dd>Estimar da una cifra con su intervalo (muestras grandes); clasificar (LQAS) solo decide «alcanza / no alcanza» con muestras pequeñas.</dd>
         <dt>Muestreo aleatorio</dt><dd>Todas las fórmulas suponen que los casos se eligen al azar. Si no es así, los resultados pueden no ser válidos.</dd>
       </dl></details>
+      <details class="gloss"><summary>Del criterio al indicador: los siete tipos</summary><div class="gloss-body">
+        <p>Cuando auditamos comprobamos si se ha hecho lo que debería haberse hecho: esa regla de buena práctica es el <b>criterio</b> («se registra la valoración del riesgo de úlceras en las primeras 24 horas»). Si lo convertimos en algo que se puede contar, tenemos un <b>indicador</b> («% de pacientes con la valoración registrada en 24 horas»). Un indicador es como un termómetro: no cura la fiebre, pero dice si hay que preocuparse.</p>
+        <div class="table-wrap"><table class="mini facil-tabla"><thead><tr><th>Tipo</th><th>Qué mide</th><th>Ejemplo</th><th>¿Con muestra?</th></tr></thead><tbody>
+          <tr><td><b>Centinela</b></td><td>Un solo caso ya es un problema</td><td>Cirugía en lugar equivocado</td><td>No: se vigilan todos</td></tr>
+          <tr><td><b>Número absoluto</b></td><td>Cuántos eventos, sin denominador</td><td>Caídas con daño al mes</td><td>Normalmente no</td></tr>
+          <tr><td><b>Porcentaje</b></td><td>Casos que cumplen entre los evaluados</td><td>% con pulsera identificativa</td><td>Sí → <a href="#/proporcion">Un porcentaje</a> o <a href="#/lqas">LQAS</a></td></tr>
+          <tr><td><b>Tasa</b></td><td>Porcentaje referido a un periodo</td><td>Úlceras adquiridas al año</td><td>Sí</td></tr>
+          <tr><td><b>Media</b></td><td>Promedio de una medición</td><td>Tiempo medio de espera</td><td>Sí → <a href="#/media">Una media</a></td></tr>
+          <tr><td><b>Ratio</b></td><td>Promedio de cumplimientos o defectos por caso</td><td>Campos sin rellenar por informe</td><td>Sí</td></tr>
+          <tr><td><b>Compuesto</b></td><td>Resume varios indicadores en uno</td><td>Paquete de valoración al ingreso</td><td>Sí → <a href="#/compuesto">Indicador compuesto</a></td></tr>
+        </tbody></table></div>
+        <p><b>Un buen indicador es:</b> <b>válido</b> (mide de verdad lo que dice medir), <b>fiable</b> (dos auditoras que revisan la misma historia llegan a la misma conclusión) y <b>útil</b> (quien recibe el resultado puede hacer algo para mejorarlo).</p>
+        <p><b>Ojo, trampa:</b> si una auditora marca «cumple» y otra «no cumple» en la misma historia, el problema no está en la historia, sino en el indicador, que estaba mal definido. Pruébalo con unas pocas historias antes de lanzar la auditoría.</p>
+      </div></details>
       <details class="gloss"><summary>Cómo elegir los casos al azar</summary><div class="gloss-body">
         <div class="table-wrap"><table class="mini facil-tabla"><thead><tr><th>Método</th><th>Cómo se hace</th><th>Cuándo conviene</th></tr></thead><tbody>
           <tr><td><b>Aleatorio simple</b></td><td>Se numera el listado y se sortean números (la app lo hace por ti si indicas N, o con ALEATORIO.ENTRE en una hoja de cálculo).</td><td>Listado completo y casos parecidos entre sí.</td></tr>
@@ -664,8 +801,21 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
           <tr><td><b>De conveniencia</b></td><td>Se coge lo que está a mano.</td><td><b>No es recomendable para auditar.</b></td></tr>
         </tbody></table></div>
         <p><b>Ojo, trampa:</b> en el sistemático, si el listado tiene un patrón (por ejemplo, cada 12.º caso coincide siempre con el mismo día de la semana), el salto puede dejar fuera siempre lo mismo. Compruébalo antes de empezar.</p>
-      </div></details></div>`;
+      </div></details>
+      <details class="gloss"><summary>Ponte a prueba: cuatro preguntas</summary><div class="gloss-body quiz">${QUIZ.map((q, i) => `<div class="quiz-q" data-quiz="${i}"><p><b>${i + 1}.</b> ${q.q}</p>${q.o.map((o, j) => `<button type="button" class="quiz-o" data-quiz="${i}" data-o="${j}">${o}</button>`).join("")}<p class="quiz-fb" hidden></p></div>`).join("")}</div></details></div>`;
   }
+
+  // Autoevaluación (adaptada de la parte teórica del curso; la 4 usa el plan exacto de la app)
+  const QUIZ = [
+    { q: "El indicador «cirugía en lugar equivocado» es de tipo…", o: ["Media", "Centinela", "Ratio"], ok: 1,
+      e: "Un solo caso ya es un problema grave: es un indicador centinela y se vigilan todos los casos, sin muestra." },
+    { q: "Ana revisa 15 historias y 10 cumplen el criterio. Escribe: «el cumplimiento del servicio es del 67 %». ¿Es correcto?", o: ["Sí", "No: con 15 historias solo se puede decidir si se alcanza un estándar, no estimar el nivel real", "Sí, con un margen de ±1 %"], ok: 1,
+      e: "Con tan pocas historias el margen de error es enorme (más de ±20 puntos). Con muestras pequeñas se decide (LQAS), no se estima." },
+    { q: "En un indicador compuesto de porcentaje simple, el denominador es…", o: ["El número de pacientes auditados", "La suma de las oportunidades de actuar bien de todos los criterios", "El número de criterios"], ok: 1,
+      e: "Se suman las oportunidades: los casos en los que se podía aplicar cada criterio (en el ejemplo del infarto, 40, no 15 pacientes)." },
+    { q: "Estándar 90 %, umbral 75 %, α = 5 %, β = 20 %. La app da n = 40 y c = 33. Se revisan 40 historias y cumplen 32. ¿Qué decides?", o: ["Verde: aceptar", "Rojo: hay que investigar", "Ampliar la muestra hasta tener 33"], ok: 1,
+      e: "32 < 33 → rojo: hay que investigar qué está pasando. La regla se fija antes y no se cambia sobre la marcha." }
+  ];
 
   // ---------- Enrutado ----------
   function buildNav() {
@@ -682,6 +832,8 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
 
   // ---------- Eventos ----------
   view.addEventListener("input", e => {
+    const ci = e.target.closest(".cmp-in");
+    if (ci) { const st = state[current.id]; if (ci.dataset.k === "pac") st.pac = ci.value; else st.rows[Number(ci.dataset.row)][ci.dataset.k] = ci.value; update(); return; }
     const i = e.target.closest(".fld-input"); if (!i) return;
     state[current.id][i.dataset.id] = i.value; syncChips(); update();
   });
@@ -696,16 +848,30 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       const h = $("#help-" + b.dataset.info), open = h.hidden;
       h.hidden = !open; b.setAttribute("aria-expanded", String(open)); return;
     }
+    if ((b = t.closest(".quiz-o"))) {
+      const q = QUIZ[Number(b.dataset.quiz)], box = b.closest(".quiz-q"), j = Number(b.dataset.o), fb = $(".quiz-fb", box);
+      $$(".quiz-o", box).forEach(x => x.classList.remove("quiz-o--ok", "quiz-o--mal"));
+      b.classList.add(j === q.ok ? "quiz-o--ok" : "quiz-o--mal");
+      fb.innerHTML = (j === q.ok ? "<b>¡Correcto!</b> " : "<b>No.</b> ") + q.e; fb.hidden = false; return;
+    }
     if ((b = t.closest("[data-q]"))) { state[current.id][b.dataset.q] = b.dataset.v; syncInputs(); update(); return; }
     if ((b = t.closest("[data-seg] button"))) { state[current.id][b.parentNode.dataset.seg] = b.dataset.v; syncInputs(); update(); return; }
     if ((b = t.closest("[data-act]"))) {
       const a = b.dataset.act;
+      if (a === "cmp-add" || a === "cmp-del") {
+        const st = state[current.id];
+        if (a === "cmp-add") st.rows.push({ nom: "", cum: "", opo: "" }); else st.rows.splice(Number(b.dataset.row), 1);
+        const keep = $("#example-text").hidden; renderCalc(current); $("#example-text").hidden = keep; $("#example-text").textContent = current.exampleText;
+        if (a === "cmp-add") { const ins = $$(".cmp-nom"); ins[ins.length - 1].focus(); }
+        return;
+      }
       if (a === "ejemplo") {
-        Object.assign(state[current.id], current.example); syncInputs(); update();
+        if (current.custom) { state[current.id] = JSON.parse(JSON.stringify(current.example)); renderCalc(current); }
+        else { Object.assign(state[current.id], current.example); syncInputs(); update(); }
         const et = $("#example-text"); et.textContent = current.exampleText; et.hidden = false;
         if (!matchMedia("(min-width: 900px)").matches) $("#res").scrollIntoView({ behavior: "smooth", block: "nearest" });
       } else if (a === "limpiar") {
-        delete state[current.id]; initState(current); syncInputs(); update(); $("#example-text").hidden = true;
+        delete state[current.id]; initState(current); if (current.custom) renderCalc(current); else { syncInputs(); update(); } $("#example-text").hidden = true;
       } else if (a === "imprimir") window.print();
       else if (a === "ver") $("#res").scrollIntoView({ behavior: "smooth", block: "start" });
       else if (a === "sortear") { const o = b.closest(".sorteo").querySelector(".sorteo-out"); o.innerHTML = sortear(b.dataset.tipo, Number(b.dataset.n), Number(b.dataset.pop)); }

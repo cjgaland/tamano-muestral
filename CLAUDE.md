@@ -9,7 +9,7 @@ PWA estática (sin build, sin dependencias, sin CDN) de cálculo de tamaño mues
 - `index.html` — esqueleto, header, nav, modales (bienvenida y Acerca de). Script inline en `<head>` que fija `data-tema` (claro/oscuro) antes de pintar.
 - `styles.css` — tokens (claro por defecto; `html[data-tema="oscuro"]`), móvil primero (360 px), layout 2 columnas >= 900 px, bloque `@media print` para el informe.
 - `stats.js` — funciones PURAS (sin DOM). `window.Stats` en navegador y `module.exports` en Node.
-- `app.js` — definición declarativa de calculadoras (`CALCS`: campos, ayudas, ejemplo, `compute(v)` que devuelve resultado, avisos y pasos), render, eventos, enrutado por hash (`#/proporcion`, `#/media`, `#/dos-proporciones`, `#/dos-medias`, `#/lqas`), tema, modales. Todo cálculo se delega en `Stats`.
+- `app.js` — definición declarativa de calculadoras (`CALCS`: campos, ayudas, ejemplo, `compute(v)` que devuelve resultado, avisos y pasos), render, eventos, enrutado por hash (`#/proporcion`, `#/media`, `#/dos-proporciones`, `#/dos-medias`, `#/lqas`, `#/compuesto`), tema, modales. Todo cálculo se delega en `Stats`.
 - `sw.js` — network-first con caché de respaldo. Subir `CACHE_NAME` al cambiar archivos. Aviso de actualización (ver §6).
 - `tests/stats.test.mjs` — `node tests/stats.test.mjs`.
 
@@ -22,6 +22,8 @@ z = cuantil normal (Acklam + un paso de Halley, error < 1e-9; erfc propia). Siem
 5. LQAS (Lemeshow y Taber 1991; Robertson y Valadez 2006; Saturno, UT 20, 1999): menor n (1..min(N,1000)) con algún c tal que P(X<c|pᵤ)≤α y P(X≥c|pₗ)≤β; entre varios c, el que minimiza max(α real, β real).
    **Convención de la interfaz = la del curso (Saturno, tema 4):** α = falsa alarma (rechazar un servicio que cumple el estándar, en pᵤ); β = fuego sin alarma (aceptar uno en el umbral o peor, en pₗ). Por defecto α 5 %, β 20 %. `Stats.lqas` conserva la convención inversa (su `alpha` es el riesgo en pₗ y devuelve `d` = c), y `app.js` las cruza al llamarla; no cambiar una sin la otra. X~Binomial(n,p), o Hipergeométrica(N,K=round(pN),n) si N conocido. pmf con log-gamma (Lanczos g=7). Curva OC = P(X≥d|p).
 
+6. Indicador compuesto de porcentaje simple (Saturno, UT19): Σ cumplimientos ÷ Σ oportunidades (`Stats.composite`). Se muestra también la media de porcentajes solo para compararla (no es el compuesto). No es un tamaño muestral: analiza resultados.
+
 ## 4. Decisiones
 - Los porcentajes se introducen en % y se convierten a proporciones en `compute`; los textos de desarrollo muestran las proporciones sustituidas.
 - LQAS con N: la regla (d) se aplica a n casos evaluables; las pérdidas solo aumentan los casos a seleccionar (limitado a N). Con N conocido se avisa de la n binomial equivalente. Si K_L = K_U tras redondear, se pide separar umbrales.
@@ -30,6 +32,9 @@ z = cuantil normal (Acklam + un paso de Halley, error < 1e-9; erfc propia). Siem
 - Las tablas de Lemeshow/Saturno del tema 4 son aproximadas (p. ej. 85/60, α 5 %, β 20 %: tabla 16/11 con β real 33 %; app exacta 22/16). La app no las usa; lo explica en una nota y hay test.
 - Cada calculadora tiene `idea` (caja siempre visible) y `facil` (HTML en `<details>`, plegado por defecto, se recuerda en `tammuestral-facil-abierto`). Contenido adaptado del tema 4 del curso de Auditorías (Rafa): sopa, báscula/arco, semáforo, galletas, falsa alarma/fuego sin alarma. Cifras de los ejemplos comprobadas con la app y R.
 - `tablaRapida()` calcula la tabla N × margen con `Stats` (no copiada de un libro).
+- Calculadora `compuesto` es `custom: true`: filas dinámicas (`formHtml`, estado `{ pac, rows: [{nom, cum, opo}] }`, `defaults` y `example` se clonan con JSON). Ejemplo = infarto de la parte teórica; NO usar los datos de los ejercicios de la parte práctica (estropearían el solucionario). El quiz del inicio (`QUIZ`) adapta la autoevaluación de la parte teórica; la pregunta 4 usa el plan exacto (40/33) en vez del de la tabla (33/26).
+- Fuentes del contenido didáctico: tema 4 del curso (PDF) y la unidad temática de Rafa (parte teórica y práctica, .docx). Revisadas: cifras correctas; la «regla del 10 %» solo aplica a las tablas binomiales (con N la app usa la hipergeométrica).
+- index.html carga `styles.css`, `stats.js` y `app.js` con `?v=<APP_VERSION>`: al publicar, actualizar también esos tres `?v=` (evita que el navegador mezcle archivos de dos versiones). El SW busca en caché con `ignoreSearch`.
 - Sorteo de casos (`sorteoHtml`/`sortear`) en proporción, media y LQAS cuando se conoce N: aleatorio simple o sistemático (k = N/n, arranque al azar). Usa Math.random (suficiente para elegir historias).
 - `compute` devuelve `warns` (⚠ ámbar: algo dudoso en los datos) y `notes` (ℹ verde azulado: información, p. ej. n binomial equivalente, redondeo de K, zona gris, z frente a t). No mezclar.
 - Dos medias usa z (63 por grupo en el caso de referencia); `power.t.test` de R, con t, da 64. Se explica en una nota.
