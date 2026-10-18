@@ -169,6 +169,44 @@ table.mini th, table.mini td { padding: 5px 8px; border-bottom: 1px solid var(--
 table.mini th:first-child, table.mini td:first-child { text-align: left; }
 table.mini tr.sel { background: var(--cyan-dim); font-weight: 700; }
 
+/* ---------- Explicado fácil (cajas como las del tema del curso) ---------- */
+.box { margin: 12px 0; padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--border); border-left-width: 4px; background: var(--bg-2); }
+.box p { margin: 4px 0; }
+.box-tag { display: block; font-size: 11.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; margin-bottom: 2px; }
+.box--idea { background: var(--green-dim); border-color: var(--green); }
+.box--idea .box-tag { color: var(--green); }
+.box--trampa { background: var(--amber-dim); border-color: var(--amber); }
+.box--trampa .box-tag { color: var(--amber); }
+.box--practica { background: var(--cyan-dim); border-color: var(--cyan); }
+.box--practica .box-tag { color: var(--cyan); }
+.box--ejemplo { background: var(--bg-3); border-color: var(--text-3); }
+.box--ejemplo .box-tag { color: var(--text-2); }
+.box .formula { margin: 6px 0; }
+details.facil { margin: 0 0 14px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.facil-body { padding: 0 14px 12px; font-size: 14.5px; }
+.facil-body h3 { font-size: 15.5px; margin: 14px 0 6px; }
+.facil-body ul, .facil-body ol { padding-left: 20px; margin: 6px 0; }
+.facil-body li + li { margin-top: 4px; }
+table.facil-tabla td, table.facil-tabla th { text-align: left; vertical-align: top; }
+.antes { margin: 6px 0 14px; }
+.home-gloss + .home-gloss, .glossary details + details { margin-top: 10px; }
+
+/* ---------- Semáforo LQAS ---------- */
+.semaforo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin: 12px 0; }
+.sem { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-2); }
+.sem b { display: block; font-size: 15px; }
+.sem span:not(.sem-luz) { font-size: 13px; color: var(--text-2); }
+.sem-luz { flex: none; width: 22px; height: 22px; border-radius: 50%; }
+.sem--verde { border-color: var(--green); background: var(--green-dim); }
+.sem--verde .sem-luz { background: var(--green); box-shadow: 0 0 0 4px var(--green-dim); }
+.sem--rojo { border-color: var(--red); background: var(--red-dim); }
+.sem--rojo .sem-luz { background: var(--red); box-shadow: 0 0 0 4px var(--red-dim); }
+@media (max-width: 420px) { .semaforo { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Sorteo ---------- */
+.sorteo .toolbar { margin: 8px 0 0; }
+.sorteo-nums { font: 600 15px var(--mono); line-height: 1.7; margin: 10px 0 4px; padding: 8px 10px; background: var(--bg-3); border-radius: 8px; border: 1px solid var(--border); }
+
 .chart-card { margin: 12px 0; padding: 12px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-lg); }
 .chart-card h3 { font-size: 15px; margin-bottom: 4px; }
 .chart-card p { margin: 6px 0 0; font-size: 13px; color: var(--text-2); }

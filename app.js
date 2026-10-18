@@ -10,8 +10,15 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.02";
+  const APP_VERSION = "2026.03";
   const NOVEDADES = [
+    { version: "2026.03", fecha: "Octubre 2026", titulo: "Explicado fácil", cambios: [
+      "Cada calculadora tiene una «Idea clave» y un apartado «Explicado fácil» con analogías y un ejemplo resuelto, en la línea del tema 4 del curso de Auditorías.",
+      "LQAS habla el mismo idioma que el curso: estándar, umbral, número de decisión c, α = falsa alarma y β = fuego sin alarma (convención de Saturno).",
+      "LQAS muestra un semáforo con la regla (verde / rojo) y explica cómo leer la «puerta de aceptación».",
+      "Nota sobre por qué los resultados no coinciden con las tablas de Lemeshow (son aproximadas).",
+      "Nuevo: sortear qué casos revisar (aleatorio simple o sistemático) cuando conoces N.",
+      "En el inicio: la cucharada de sopa, ¿estimar o decidir? y cómo elegir los casos al azar."] },
     { version: "2026.02", fecha: "Octubre 2026", titulo: "Mejor en el móvil", cambios: [
       "La página ya no se sale por la derecha en pantallas pequeñas y las fórmulas se ajustan al ancho.",
       "Curva característica operativa más legible: etiquetas sin solapes y tamaño adecuado en el ordenador.",
@@ -60,17 +67,24 @@
   const F_LOSS = { id: "loss", label: "Pérdidas / no respuesta previstas", unit: "%", def: "0", quick: [0, 10, 15, 20], opt: true,
     help: "Porcentaje de casos que prevés perder (historia ilegible o no localizable, paciente que no responde, dato ausente…). El tamaño se aumenta para compensarlo: n_final = n / (1 − pérdidas), redondeado hacia arriba. Si no esperas pérdidas, deja 0." };
   const F_ALPHA = { id: "alpha", label: "Nivel de significación α", unit: "%", def: "5", quick: [1, 5, 10],
-    help: "Probabilidad máxima que aceptas de dar por «diferente» algo que en realidad es igual (falso positivo, error tipo I). Lo habitual es 5 %." };
+    help: "Riesgo de falsa alarma: probabilidad máxima que aceptas de dar por «diferente» algo que en realidad es igual (falso positivo, error tipo I). Lo habitual es 5 %." };
   const F_SIDES = { id: "sides", label: "Contraste", type: "seg", def: "2", options: [["2", "Bilateral"], ["1", "Unilateral"]],
     help: "Bilateral: te interesa detectar diferencias en cualquier sentido (lo habitual y lo más prudente). Unilateral: solo te interesa un sentido (p. ej. solo mejora), y debe estar justificado de antemano; necesita menos muestra." };
   const F_POWER = { id: "power", label: "Potencia (1 − β)", unit: "%", def: "80", quick: [80, 90, 95],
-    help: "Probabilidad de detectar la diferencia si de verdad existe (1 menos el error tipo II). 80 % es el mínimo habitual; 90 % si quieres más seguridad." };
+    help: "Probabilidad de darte cuenta de la diferencia si de verdad existe (1 menos el error tipo II). Con 80 %, de cada 5 diferencias reales detectarías 4. 80 % es el mínimo habitual; 90 % si quieres más seguridad." };
   const F_K = { id: "k", label: "Razón de tamaños k = n₂ / n₁", def: "1", quick: [1, 2, 3],
     help: "1 si los dos grupos tienen el mismo tamaño (lo más eficiente). Si el grupo 2 es el doble que el 1, k = 2." };
   const F_NPOP = { id: "N", label: "Tamaño de la población N", unit: "casos", opt: true, def: "", ph: "opcional",
     help: "Número total de unidades de las que extraerás la muestra (p. ej. historias del periodo). Si lo conoces y la muestra es una fracción apreciable (> 5 %), se aplica la corrección por población finita y necesitas menos casos. Si no lo conoces o es muy grande, déjalo vacío." };
   const F_CONF = { id: "conf", label: "Nivel de confianza (1 − α)", unit: "%", def: "95", quick: [90, 95, 99],
     help: "Seguridad con la que quieres que el intervalo calculado contenga el valor real. 95 % es el estándar; 99 % exige más muestra." };
+
+  // Tabla de casos según N y el margen (95 %, p = 50 %), calculada con Stats (no copiada de un libro)
+  function tablaRapida() {
+    const Ns = [50, 100, 200, 300, 500, 1000, 2000, 5000, 0], es = [0.05, 0.10, 0.15, 0.20];
+    const rows = Ns.map(N => `<tr><td>${N ? nf(N, 0) : "Más de 10.000"}</td>${es.map(e => `<td>${S.sampleProportion({ conf: 0.95, e, p: 0.5, N }).n}</td>`).join("")}</tr>`).join("");
+    return `<div class="table-wrap"><table class="mini"><thead><tr><th>Universo (N)</th>${es.map(e => `<th>± ${nf(e * 100, 0)} %</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div><p class="step-note">Casos a revisar para estimar un porcentaje, ya redondeados hacia arriba.</p>`;
+  }
 
   // ---------- Definición de calculadoras ----------
   const CALCS = [
@@ -81,6 +95,26 @@
       a: "Calculadora de <b>una proporción</b>",
       what: "Calcula cuántos casos debes revisar para estimar un porcentaje de la población (cumplimiento, prevalencia, satisfacción…) con un margen de error y una confianza fijados de antemano.",
       when: "Úsala cuando el objetivo es <b>medir</b> «¿qué porcentaje es…?» con un intervalo de confianza estrecho. Si solo necesitas decidir si una unidad alcanza un estándar (sí/no), con menos casos basta LQAS.",
+      idea: "Para saber si la sopa está salada no hace falta tomarse la olla entera: basta una cucharada, <b>después de removerla bien</b>. Remover es el azar. Revisar una parte de las historias, <b>elegidas al azar</b>, permite saber qué porcentaje cumple en todas, con una horquilla de error.",
+      facil: `
+        <h3>Los tres datos, explicados sin estadística</h3>
+        <ul>
+          <li><b>Confianza (95 %)</b>: si hiciéramos esta misma auditoría 100 veces, en 95 la horquilla contendría el valor real. Es lo habitual.</li>
+          <li><b>Margen de error (±)</b>: lo ancha que es la horquilla. Con ±10 y un resultado del 80 %, el valor real estaría entre el 70 % y el 90 %.</li>
+          <li><b>Porcentaje esperado</b>: lo que crees que vas a encontrar. Si no tienes ni idea, pon <b>50 %</b>: es el caso que más casos pide, así vas sobrado sea cual sea el resultado.</li>
+        </ul>
+        <div class="box box--ejemplo"><span class="box-tag">Ejemplo resuelto</span>
+          <p>Se quiere conocer el porcentaje de historias con el consentimiento informado firmado, sin idea previa (50 %). Confianza 95 % y margen ±10 %:</p>
+          <p class="formula">n = 1,96² × 0,5 × 0,5 ÷ 0,10² = 96,04 → 97 historias</p>
+          <p>(siempre se redondea hacia arriba). Si en esas 97 historias el 80 % tiene el consentimiento, el valor real estará, con un 95 % de confianza, <b>entre el 70 % y el 90 %</b>.</p>
+          <p>Con ±5 %: <b>385 historias</b>. <b>Doble de precisión, cuatro veces más trabajo.</b></p>
+          <p>Si solo hay 200 historias en total (N = 200), con ±10 % bastan <b>66</b> en vez de 97: cuando el universo es pequeño, hacen falta menos.</p></div>
+        <h3>Tabla rápida (confianza 95 %, porcentaje esperado 50 %)</h3>
+        ${tablaRapida()}
+        <div class="box box--practica"><span class="box-tag">En la práctica</span>
+          <p><b>La regla práctica.</b> Para evaluaciones internas de calidad es habitual revisar unas <b>50 historias al azar (como mínimo 30)</b>, sin cálculo formal. Pero una muestra pequeña solo detecta cambios grandes.</p>
+          <p><b>Cuidado al informar porcentajes de muestras pequeñas.</b> Si en 20 historias cumplen 16, el 80 % observado tiene un margen de unos ±18 puntos: el valor real podría estar entre el 62 % y el 98 %. Con pocas historias, lo correcto es <b>decidir con LQAS</b> o ampliar la muestra.</p></div>
+        <div class="box box--trampa"><span class="box-tag">Ojo, trampa</span><p><b>La muestra de conveniencia no vale.</b> Revisar «las 20 historias que están sobre la mesa» o «las últimas que se cerraron» suele dar un resultado mejor que la realidad, porque lo más reciente y lo más a mano suele estar mejor cumplimentado.</p></div>`,
       fields: [
         F_CONF,
         { id: "e", label: "Precisión absoluta e (± puntos porcentuales)", unit: "puntos %", def: "5", quick: [3, 5, 10],
@@ -118,7 +152,7 @@
           big: { label: "Tamaño de muestra necesario", value: nf(r.nFinal, 0), sub: "casos (historias, pacientes, registros…)" + (L > 0 ? " · ya incluye pérdidas" : "") },
           extras: [["n sin pérdidas", nf(r.n, 0)], N ? ["n₀ sin corrección", nf(r.n0c, 0)] : null].filter(Boolean),
           interp: `Si analizas <b>${nf(r.nFinal, 0)}</b> casos, podrás estimar el porcentaje con un margen de error de <b>±${nf(v.e)} puntos</b> y una confianza del <b>${nf(v.conf)} %</b>. Por ejemplo, si en la muestra obtienes un ${nf(v.p)} %, el valor real de la población estaría entre ${nf(lo)} % y ${nf(hi)} %.`,
-          warns, steps, mini: nf(r.nFinal, 0)
+          warns, steps, mini: nf(r.nFinal, 0), extraHtml: sorteoHtml(r.nFinal, N)
         };
       }
     },
@@ -130,6 +164,19 @@
       a: "Calculadora de <b>una media</b>",
       what: "Calcula cuántos casos necesitas para estimar la media de una variable numérica con un margen de error (en sus mismas unidades) y una confianza fijados.",
       when: "Úsala para medir <b>«¿cuánto vale de media…?»</b>: demora, estancia, puntuación de una escala… Necesitas una idea de la dispersión (desviación típica) de la variable.",
+      idea: "Si todos los pacientes esperasen lo mismo, bastaría con mirar uno. Cuanto <b>más distintos</b> son unos de otros (más dispersión, σ), más casos hacen falta para que la media de la muestra se parezca a la real.",
+      facil: `
+        <h3>Los datos, explicados sin estadística</h3>
+        <ul>
+          <li><b>Desviación típica (σ)</b>: cuánto se separan los valores de la media, «por término medio». <b>Truco</b> si no la conoces: σ ≈ (valor alto habitual − valor bajo habitual) ÷ 4. Si casi todas las esperas van de 10 a 110 minutos, σ ≈ 100 ÷ 4 = 25 minutos.</li>
+          <li><b>Margen de error (±)</b>: la horquilla que aceptas, en las mismas unidades. ±5 minutos: si la media de la muestra sale 40, la real estará entre 35 y 45.</li>
+          <li><b>Confianza (95 %)</b>: de cada 100 estudios hechos así, en 95 la horquilla acertaría.</li>
+        </ul>
+        <div class="box box--ejemplo"><span class="box-tag">Ejemplo resuelto</span>
+          <p>Tiempo medio de espera en Urgencias: σ ≈ 25 minutos, margen ±5 minutos, confianza 95 %:</p>
+          <p class="formula">n = 1,96² × 25² ÷ 5² = 96,04 → 97 pacientes</p>
+          <p>Con ±10 minutos bastan <b>25</b>. Otra vez: doble de precisión, cuatro veces más trabajo.</p></div>
+        <div class="box box--trampa"><span class="box-tag">Ojo, trampa</span><p><b>σ y el margen tienen que ir en las mismas unidades</b> (minutos con minutos, días con días). Y si unos pocos casos son larguísimos (esperas de 8 horas), la media engaña: haz antes un pequeño piloto o consulta a un estadístico.</p></div>`,
       fields: [
         F_CONF,
         { id: "sigma", label: "Desviación típica σ", unit: "unidades", def: "", ph: "p. ej. 25",
@@ -164,7 +211,7 @@
           big: { label: "Tamaño de muestra necesario", value: nf(r.nFinal, 0), sub: "casos" + (L > 0 ? " · ya incluye pérdidas" : "") },
           extras: [["n sin pérdidas", nf(r.n, 0)], N ? ["n₀ sin corrección", nf(r.n0c, 0)] : null].filter(Boolean),
           interp: `Con <b>${nf(r.nFinal, 0)}</b> casos podrás estimar la media con un error máximo de <b>±${nf(v.e)}</b> unidades y una confianza del <b>${nf(v.conf)} %</b>, suponiendo que la desviación típica real ronde ${nf(v.sigma)}.`,
-          warns, steps, mini: nf(r.nFinal, 0)
+          warns, steps, mini: nf(r.nFinal, 0), extraHtml: sorteoHtml(r.nFinal, N)
         };
       }
     },
@@ -176,6 +223,18 @@
       a: "Calculadora de <b>dos proporciones</b>",
       what: "Calcula cuántos casos necesitas <b>en cada grupo</b> para detectar, con la potencia deseada, una diferencia entre dos porcentajes (por ejemplo, el cumplimiento antes y después de una intervención de mejora).",
       when: "Úsala para evaluar si una intervención o un servicio <b>cambia</b> un indicador de proceso o resultado expresado en porcentaje, y quieres tener muestra suficiente para que la diferencia no pase desapercibida.",
+      idea: "Si lanzas una moneda 10 veces y salen 6 caras, eso no demuestra que esté trucada. Si la lanzas 1.000 veces y salen 600, sí. Para saber si una <b>mejora es real y no casualidad</b>, hacen falta suficientes casos en cada grupo.",
+      facil: `
+        <h3>Los datos, explicados sin estadística</h3>
+        <ul>
+          <li><b>p₁ y p₂</b>: el porcentaje de antes (o del servicio A) y el que esperas conseguir (o la mejora más pequeña que te importaría).</li>
+          <li><b>α (5 %)</b>: riesgo de <b>falsa alarma</b>: concluir que ha mejorado cuando en realidad no.</li>
+          <li><b>Potencia (80 %)</b>: probabilidad de <b>darte cuenta</b> si de verdad mejoró. Con 80 %, de cada 5 mejoras reales detectarías 4.</li>
+        </ul>
+        <div class="box box--ejemplo"><span class="box-tag">Ejemplo resuelto</span>
+          <p>Una campaña de higiene de manos quiere subir la adherencia del 40 % al 60 %. Con α = 5 % y potencia 80 % hacen falta <b>97 observaciones antes y 97 después</b>.</p>
+          <p>Para demostrar una subida del 40 % al 50 % harían falta <b>388 por grupo</b>, y del 40 % al 45 %, <b>1.534 por grupo</b>. Cuanto más pequeña es la mejora que quieres demostrar, muchísimos más casos.</p></div>
+        <div class="box box--trampa"><span class="box-tag">Ojo, trampa</span><p><b>«No hemos demostrado mejora» no es lo mismo que «no hay mejora».</b> Con 30 casos por grupo solo se ven cambios enormes: la campaña pudo funcionar y la muestra ser demasiado pequeña para notarlo.</p></div>`,
       fields: [
         { id: "p1", label: "Proporción esperada en el grupo 1 (p₁)", unit: "%", def: "", ph: "p. ej. 40", help: "Porcentaje esperado en el grupo de referencia (p. ej. cumplimiento actual o «antes»), según datos previos o un piloto." },
         { id: "p2", label: "Proporción esperada en el grupo 2 (p₂)", unit: "%", def: "", ph: "p. ej. 60", help: "Porcentaje que esperas lograr (o la menor diferencia que sería relevante). Cuanto más cerca de p₁, mucha más muestra." },
@@ -232,6 +291,17 @@
       a: "Calculadora de <b>dos medias</b>",
       what: "Calcula cuántos casos necesitas <b>en cada grupo</b> para detectar una diferencia mínima relevante entre las medias de una variable numérica.",
       when: "Úsala para comparar una variable cuantitativa (demora, estancia, puntuación…) entre dos grupos independientes, suponiendo una desviación típica similar en ambos.",
+      idea: "Piensa en <b>señal y ruido</b>: la diferencia que buscas (Δ) es la señal; lo distintos que son los pacientes entre sí (σ) es el ruido. Si la señal es pequeña comparada con el ruido, hacen falta muchos casos para oírla.",
+      facil: `
+        <h3>Los datos, explicados sin estadística</h3>
+        <ul>
+          <li><b>σ</b>: cuánto varía la medida de un paciente a otro (truco: valor alto habitual − valor bajo habitual, dividido entre 4).</li>
+          <li><b>Δ</b>: la diferencia más pequeña que <b>merecería la pena</b> detectar. No es la que esperas, sino la mínima que importaría.</li>
+          <li><b>α (5 %)</b>: riesgo de falsa alarma. <b>Potencia (80 %)</b>: probabilidad de notar la diferencia si existe.</li>
+        </ul>
+        <div class="box box--ejemplo"><span class="box-tag">Ejemplo resuelto</span>
+          <p>¿Reduce un nuevo circuito la espera en Urgencias? σ = 30 minutos. Para detectar <b>10 minutos</b> menos hacen falta <b>142 pacientes por grupo</b>; para detectar <b>20 minutos</b>, solo <b>36</b>.</p></div>
+        <div class="box box--trampa"><span class="box-tag">Ojo, trampa</span><p>Si eliges una Δ enorme para que salgan pocos casos, el estudio solo podrá ver diferencias enormes. Elige la Δ por su relevancia clínica, no por comodidad.</p></div>`,
       fields: [
         { id: "sigma", label: "Desviación típica común σ", unit: "unidades", def: "", ph: "p. ej. 30", help: "Dispersión de la variable (se supone igual en los dos grupos), en sus mismas unidades. Sácala de datos previos o un piloto." },
         { id: "delta", label: "Diferencia mínima relevante Δ", unit: "unidades", def: "", ph: "p. ej. 10", help: "La diferencia entre medias más pequeña que te interesaría detectar por su relevancia clínica o de gestión, en las mismas unidades que σ. No es la diferencia que «esperas», sino la mínima que importaría." },
@@ -274,103 +344,173 @@
     },
 
     // ===================== 5. LQAS =====================
+    // Convención del curso (Saturno, tema 4): α = rechazar un servicio que cumple el estándar
+    // (falsa alarma, en pᵤ); β = aceptar un servicio en el umbral o peor (fuego sin alarma, en pₗ).
+    // Stats.lqas usa la convención inversa (su alpha es el riesgo en pₗ), por eso se cruzan al llamarla.
     {
-      id: "lqas", short: "LQAS (auditoría)", title: "LQAS · Clasificar una unidad en una auditoría",
+      id: "lqas", short: "LQAS (auditoría)", title: "LQAS · ¿Alcanza el estándar? (semáforo)",
       q: "¿Quieres decidir si una unidad o servicio alcanza un estándar (sí / no) en una auditoría?",
-      a: "Calculadora <b>LQAS</b> (muestreo para aseguramiento de la calidad por lotes)",
-      what: "LQAS (<i>Lot Quality Assurance Sampling</i>) calcula cuántos casos revisar (n) y cuántos deben cumplir (d) para <b>clasificar</b> una unidad como «alcanza el estándar» o «no lo alcanza», con riesgos de error controlados.",
-      when: "Úsala en <b>auditorías</b> cuando no necesitas la cifra exacta de cumplimiento sino una decisión. A diferencia de «estimar una proporción» (que da un intervalo de confianza y requiere muestras grandes), LQAS suele necesitar solo 15–30 casos por unidad. Si conoces cuántos casos hay en total (N), usa la distribución hipergeométrica y la muestra se reduce.",
+      a: "Calculadora <b>LQAS</b> (muestreo para la aceptación de lotes)",
+      what: "LQAS (<i>Lot Quality Assurance Sampling</i>, muestreo para la aceptación de lotes) calcula cuántos casos revisar (<b>n</b>) y cuántos tienen que cumplir como mínimo (<b>c</b>, el número de decisión) para decidir si un servicio <b>alcanza el estándar</b> o <b>hay que investigar</b>, con errores controlados.",
+      when: "Úsala en <b>auditorías</b> cuando no necesitas la cifra exacta de cumplimiento, sino una decisión: verde o rojo. A diferencia de «estimar un porcentaje» (que necesita cientos de casos), LQAS suele bastar con 15–35. Si sabes cuántos casos tiene el lote (N), la muestra se reduce.",
+      idea: "LQAS funciona como un <b>semáforo, no como una báscula</b>. No dice cuánto se cumple: con pocos casos dice <b>«verde: sin evidencia de problema»</b> o <b>«rojo: hay que investigar»</b>. Es como el arco del aeropuerto: no dice cuánto metal llevas, solo pita o no pita.",
+      facil: `
+        <h3>Vocabulario, con una caja de galletas</h3>
+        <div class="table-wrap"><table class="mini facil-tabla"><thead><tr><th>Término</th><th>Qué significa</th><th>Dicho de otro modo</th></tr></thead><tbody>
+          <tr><td><b>Lote</b></td><td>El conjunto de casos que se quiere juzgar</td><td>La caja de galletas</td></tr>
+          <tr><td><b>Estándar</b></td><td>Cumplimiento que queremos tener</td><td>Lo que nos comprometemos a hacer</td></tr>
+          <tr><td><b>Umbral</b></td><td>Cumplimiento por debajo del cual la situación es claramente mala</td><td>La línea roja que no queremos cruzar</td></tr>
+          <tr><td><b>n</b></td><td>Casos que hay que revisar</td><td>Cuántas galletas pruebo</td></tr>
+          <tr><td><b>c</b></td><td>Mínimo de cumplimientos en la muestra para aceptar</td><td>La nota mínima para aprobar</td></tr>
+          <tr><td><b>Error α</b></td><td>Sale rojo un servicio que sí cumple el estándar</td><td>Falsa alarma: suena el detector y no hay fuego</td></tr>
+          <tr><td><b>Error β</b></td><td>Sale verde un servicio que está en el umbral o peor</td><td>Fuego sin alarma</td></tr>
+        </tbody></table></div>
+        <p>Lo habitual es <b>α = 5 %</b> y <b>β = 20 % o 10 %</b>. Una falsa alarma hace perder tiempo investigando algo que no falla; un fuego sin alarma deja pasar un problema real. Cuanto más pequeños los errores que aceptas, más casos hay que revisar.</p>
+        <h3>Cómo se hace, en cinco pasos</h3>
+        <ol>
+          <li><b>Define el lote</b>: por ejemplo, los pacientes atendidos en triaje el último mes.</li>
+          <li><b>Fija el estándar y el umbral</b> del indicador (por ejemplo, 85 % y 60 %).</li>
+          <li><b>Elige α y β</b> (lo habitual: 5 % y 20 %).</li>
+          <li>Esta calculadora te da <b>n</b> y <b>c</b>.</li>
+          <li><b>Sortea n casos</b> del lote y cuenta cuántos cumplen: si cumplen <b>c o más → verde</b>; si cumplen menos → <b>rojo, hay que investigar</b>.</li>
+        </ol>
+        <p>Una vez conocidos n y c no hace falta ningún cálculo más: cualquier persona del equipo puede aplicarlo sin saber estadística.</p>
+        <div class="box box--ejemplo"><span class="box-tag">Ejemplo resuelto: registro del dolor en Urgencias</span>
+          <p>Se quiere vigilar el porcentaje de pacientes con el dolor registrado en el triaje. <b>Estándar 85 %</b>, <b>umbral 60 %</b>, α = 5 %, β = 20 %.</p>
+          <p>Resultado: revisar <b>22 historias</b> elegidas al azar, con <b>c = 16</b>. Si 18 tienen el dolor registrado: 18 ≥ 16 → <b>verde</b>, sin evidencia de problema. Si solo 14: 14 &lt; 16 → <b>rojo</b>, hay que investigar.</p>
+          <p>Si sabemos que el lote son 150 pacientes, basta con <b>18 historias y c = 13</b>.</p></div>
+        <h3>Lo que LQAS dice y lo que no</h3>
+        <ul>
+          <li><b>No mide el cumplimiento.</b> Si 18 de 22 cumplen, no se puede escribir «el cumplimiento es del 82 %». Solo: «no hay evidencia de que el estándar del 85 % esté en peligro».</li>
+          <li><b>Verde no es «excelente» y rojo no es una sentencia</b>: es un aviso para mirar más a fondo qué está fallando.</li>
+          <li><b>Si un solo caso ya es grave, no se usa LQAS.</b> En los indicadores centinela (por ejemplo, cirugía en el lado equivocado) hay que revisar todos los casos.</li>
+        </ul>
+        <h3>Condiciones para aplicarlo</h3>
+        <ul>
+          <li>Lo que se evalúa tiene solo dos valores: <b>cumple / no cumple</b>.</li>
+          <li>Cada caso es <b>independiente</b> de los demás (casi siempre ocurre con historias clínicas).</li>
+          <li>El lote es <b>homogéneo</b>: el mismo criterio durante todo el periodo y el mismo tipo de casos.</li>
+          <li>Los casos se eligen <b>al azar</b>.</li>
+        </ul>
+        <div class="box box--trampa"><span class="box-tag">Ojo, trampa</span><p><b>No mezcles el sentido.</b> c cuenta <b>cumplimientos</b>: si hay menos de c, sale rojo. Si prefieres contar incumplimientos, sale rojo cuando hay más de n − c. Cuenta siempre en el mismo sentido que el estándar.</p></div>`,
       fields: [
-        { id: "pU", label: "Umbral superior pᵤ (cumplimiento adecuado)", unit: "%", def: "80", quick: [80, 90, 95],
-          help: "Cumplimiento a partir del cual consideras que la unidad es ADECUADA (el estándar). Una unidad con cumplimiento real ≥ pᵤ debería clasificarse como adecuada." },
-        { id: "pL", label: "Umbral inferior pₗ (cumplimiento inaceptable)", unit: "%", def: "50", quick: [50, 60, 70],
-          help: "Cumplimiento por debajo del cual la situación es INACEPTABLE. Entre pₗ y pᵤ hay una «zona gris» en la que el método no garantiza la clasificación. Cuanto más separados estén los umbrales, menos casos hacen falta." },
-        { id: "alpha", label: "Riesgo α (clasificar como adecuada una unidad inaceptable)", unit: "%", def: "10", quick: [5, 10, 20],
-          help: "Probabilidad máxima de dar por ADECUADA una unidad cuyo cumplimiento real es ≤ pₗ (falso aprobado). Es el error que más preocupa en seguridad del paciente." },
-        { id: "beta", label: "Riesgo β (clasificar como no adecuada una unidad adecuada)", unit: "%", def: "10", quick: [5, 10, 20],
-          help: "Probabilidad máxima de dar por NO ADECUADA una unidad cuyo cumplimiento real es ≥ pᵤ (falso suspenso)." },
-        { id: "N", label: "Tamaño de la población N", unit: "casos", opt: true, def: "", ph: "opcional",
-          help: "Número total de casos auditables en la unidad (p. ej. historias del periodo). Si lo conoces se usa la distribución HIPERGEOMÉTRICA (muestreo sin reposición), que requiere menos casos, sobre todo si N es pequeño. Si no, se usa la BINOMIAL (población grande o desconocida)." },
+        { id: "pU", label: "Estándar (lo que queremos tener)", unit: "%", def: "85", quick: [80, 85, 90, 95],
+          help: "Nivel de cumplimiento que nos comprometemos a mantener (en inglés AQL). Por ejemplo: el 85 % de los pacientes con el dolor registrado en el triaje. Un servicio que lo cumple debería salir VERDE." },
+        { id: "pL", label: "Umbral (la línea roja que no toleramos)", unit: "%", def: "60", quick: [50, 60, 70, 75],
+          help: "Cumplimiento por debajo del cual la situación es claramente mala (en inglés LQL). Un servicio en el umbral o peor debería salir ROJO. Entre el umbral y el estándar hay una «zona gris» en la que puede salir cualquier color. Cuanto más separados estén, menos casos hacen falta." },
+        { id: "alpha", label: "Error α · falsa alarma", unit: "%", def: "5", quick: [5, 10],
+          help: "Probabilidad de que salga ROJO un servicio que en realidad cumple el estándar: suena el detector y no hay fuego. Hace perder tiempo investigando algo que no falla. Lo habitual: 5 %." },
+        { id: "beta", label: "Error β · fuego sin alarma", unit: "%", def: "20", quick: [10, 20],
+          help: "Probabilidad de que salga VERDE un servicio que en realidad está en el umbral o peor: hay fuego y no suena la alarma. Deja pasar un problema real. Lo habitual: 20 %, o 10 % si quieres más seguridad (a cambio de más casos)." },
+        { id: "N", label: "Tamaño del lote N", unit: "casos", opt: true, def: "", ph: "opcional",
+          help: "Número total de casos del lote (la «caja de galletas»): por ejemplo, las historias del periodo. Si lo conoces, se usa la distribución HIPERGEOMÉTRICA (muestreo sin reposición) y suelen hacer falta menos casos, sobre todo si el lote es pequeño. Si no lo conoces, se usa la BINOMIAL." },
         F_LOSS
       ],
-      example: { pU: "80", pL: "50", alpha: "10", beta: "10", N: "100", loss: "0" },
-      exampleText: "Ejemplo: auditoría de la valoración del riesgo de caídas en una unidad de Medicina Interna con 100 historias en el periodo. Estándar: 80 %; inaceptable: 50 %; α = β = 10 %.",
+      example: { pU: "85", pL: "60", alpha: "5", beta: "20", N: "", loss: "0" },
+      exampleText: "Ejemplo (tema 4 del curso): vigilar el registro del dolor en el triaje de Urgencias. Estándar 85 %, umbral 60 %, α = 5 % (falsa alarma) y β = 20 % (fuego sin alarma).",
       compute(v) {
         const E = [];
-        R(E, v, "pU", "Umbral superior", 0, 100, false, false);
-        R(E, v, "pL", "Umbral inferior", 0, 100, false, false);
-        if (!E.length && v.pL >= v.pU) E.push({ f: "pL", m: "El umbral inferior debe ser menor que el superior." });
-        R(E, v, "alpha", "Riesgo α", 0, 50, false, false);
-        R(E, v, "beta", "Riesgo β", 0, 50, false, false);
+        R(E, v, "pU", "Estándar", 0, 100, false, false);
+        R(E, v, "pL", "Umbral", 0, 100, false, false);
+        if (!E.length && v.pL >= v.pU) E.push({ f: "pL", m: "El umbral (línea roja) debe ser menor que el estándar." });
+        R(E, v, "alpha", "Error α", 0, 50, false, false);
+        R(E, v, "beta", "Error β", 0, 50, false, false);
         Npop(E, v, 2);
         R(E, v, "loss", "Pérdidas", 0, 90, true, false);
-        if (!E.length && v.N && Math.round(v.pL / 100 * v.N) >= Math.round(v.pU / 100 * v.N)) E.push({ f: "N", m: "Con ese N los umbrales corresponden al mismo número de casos conformes (K); sepáralos más o aumenta N." });
+        if (!E.length && v.N && Math.round(v.pL / 100 * v.N) >= Math.round(v.pU / 100 * v.N)) E.push({ f: "N", m: "Con ese tamaño de lote, el umbral y el estándar corresponden al mismo número de casos que cumplen; sepáralos más o aumenta N." });
         if (E.length) return { errors: E };
         const pL = v.pL / 100, pU = v.pU / 100, alpha = v.alpha / 100, beta = v.beta / 100, L = v.loss / 100, N = v.N || 0;
-        const r = S.lqas({ pL, pU, alpha, beta, N, loss: L });
-        if (!r.found) return { errors: [], warnOnly: [`No existe ninguna regla con n ≤ ${nf(r.nMax, 0)} que cumpla los riesgos pedidos. Separa más los umbrales o acepta riesgos α y β mayores.`] };
-        const n = r.n, d = r.d, hyp = r.method === "hypergeometric";
-        const sdev = S.lqasPAccept;
+        // Cruce de convenciones (ver comentario de cabecera)
+        const r = S.lqas({ pL, pU, alpha: beta, beta: alpha, N, loss: L });
+        if (!r.found) return { errors: [], warnOnly: [`No existe ninguna regla con n ≤ ${nf(r.nMax, 0)} que cumpla los errores pedidos. Separa más el umbral del estándar o acepta errores α y β mayores.`] };
+        const n = r.n, c = r.d, hyp = r.method === "hypergeometric";
+        const aR = r.betaReal, bR = r.alphaReal;   // α real (rojo en el estándar) y β real (verde en el umbral)
+        const pAcc = S.lqasPAccept;                // P(X ≥ c | p): probabilidad de salir verde
         const steps = [];
         steps.push({ t: "Modelo de la muestra", f: hyp
-          ? [`Se revisan n casos de una población de N = ${nf(N, 0)}. X = nº de casos conformes.`, `X ~ Hipergeométrica(N, K, n) con K = round(p·N)`, `K en pₗ = ${nf(r.KL, 0)} de ${nf(N, 0)}   ·   K en pᵤ = ${nf(r.KU, 0)} de ${nf(N, 0)}`]
-          : ["Se revisan n casos. X = nº de casos conformes.", "X ~ Binomial(n, p)  (población grande o desconocida)"],
-          note: "Regla: la unidad se clasifica como ADECUADA si X ≥ d." });
-        steps.push({ t: "Condiciones que debe cumplir la regla (n, d)", f: [
-          `α:  P(X ≥ d | p = pₗ = ${nf(pL, 4)}) ≤ ${nf(alpha, 4)}`,
-          `β:  P(X < d | p = pᵤ = ${nf(pU, 4)}) ≤ ${nf(beta, 4)}`], note: "Se busca el menor n (1, 2, 3…) para el que existe algún d que cumple las dos condiciones; si hay varios d, se elige el que minimiza el mayor de los dos riesgos reales." });
-        const rows = [d - 1, d, d + 1].filter(x => x >= 0 && x <= n).map(x => ({ d: x, a: sdev(n, x, N, pL), b: 1 - sdev(n, x, N, pU) }));
-        const tbl = `<div class="table-wrap"><table class="mini"><thead><tr><th>d (con n = ${n})</th><th>α real</th><th>β real</th><th>¿Cumple?</th></tr></thead><tbody>` +
-          rows.map(x => `<tr class="${x.d === d ? "sel" : ""}"><td>${x.d}</td><td>${pc(x.a, 2)}</td><td>${pc(x.b, 2)}</td><td>${x.a <= alpha + 1e-12 && x.b <= beta + 1e-12 ? "sí" : "no"}</td></tr>`).join("") + "</tbody></table></div>";
-        steps.push({ t: "Resultado de la búsqueda", f: [`n = ${n}   ·   d = ${d}`, `α real = P(X ≥ ${d} | pₗ) = ${pc(r.alphaReal, 3)}`, `β real = P(X < ${d} | pᵤ) = ${pc(r.betaReal, 3)}`], html: tbl, note: n > 1 ? `Con n = ${n - 1} no existe ningún d que cumpla ambas condiciones.` : "" });
-        if (L > 0) steps.push({ t: "Ajuste por pérdidas", f: ["n_final = n / (1 − pérdidas)", `n_final = ${n} / (1 − ${nf(L, 4)}) → ${r.nFinal}`], note: `La regla de decisión (d = ${d}) se aplica a ${n} casos evaluables: si algún caso no es utilizable, sigue hasta reunir ${n}.` });
+          ? [`Se revisan n casos de un lote de N = ${nf(N, 0)}. X = nº de casos que cumplen.`, `X ~ Hipergeométrica(N, K, n), con K = round(p·N)`, `K en el umbral = ${nf(r.KL, 0)} de ${nf(N, 0)}   ·   K en el estándar = ${nf(r.KU, 0)} de ${nf(N, 0)}`]
+          : ["Se revisan n casos. X = nº de casos que cumplen.", "X ~ Binomial(n, p)  (lote grande o de tamaño desconocido)"],
+          note: "Regla: si X ≥ c → verde (se acepta); si X < c → rojo (hay que investigar)." });
+        steps.push({ t: "Condiciones que debe cumplir la regla (n, c)", f: [
+          `α (falsa alarma):     P(X < c | p = estándar = ${nf(pU, 4)}) ≤ ${nf(alpha, 4)}`,
+          `β (fuego sin alarma): P(X ≥ c | p = umbral = ${nf(pL, 4)}) ≤ ${nf(beta, 4)}`], note: "Se busca el menor n (1, 2, 3…) para el que existe algún c que cumple las dos condiciones; si valen varios c, se elige el que deja el mayor de los dos errores reales más bajo." });
+        const rows = [c - 1, c, c + 1].filter(x => x >= 0 && x <= n).map(x => ({ c: x, a: 1 - pAcc(n, x, N, pU), b: pAcc(n, x, N, pL) }));
+        const tbl = `<div class="table-wrap"><table class="mini"><thead><tr><th>c (con n = ${n})</th><th>α real</th><th>β real</th><th>¿Cumple?</th></tr></thead><tbody>` +
+          rows.map(x => `<tr class="${x.c === c ? "sel" : ""}"><td>${x.c}</td><td>${pc(x.a, 2)}</td><td>${pc(x.b, 2)}</td><td>${x.a <= alpha + 1e-12 && x.b <= beta + 1e-12 ? "sí" : "no"}</td></tr>`).join("") + "</tbody></table></div>";
+        steps.push({ t: "Resultado de la búsqueda", f: [`n = ${n}   ·   c = ${c}`, `α real = P(X < ${c} | estándar) = ${pc(aR, 3)}`, `β real = P(X ≥ ${c} | umbral) = ${pc(bR, 3)}`], html: tbl, note: n > 1 ? `Con n = ${n - 1} no existe ningún c que cumpla las dos condiciones.` : "" });
+        if (L > 0) steps.push({ t: "Ajuste por pérdidas", f: ["n_final = n / (1 − pérdidas)", `n_final = ${n} / (1 − ${nf(L, 4)}) → ${r.nFinal}`], note: `La regla (c = ${c}) se aplica a ${n} casos evaluables: si algún caso no sirve, sigue hasta reunir ${n}.` });
         const warns = [];
-        if (pU - pL < 0.15) warns.push("Los umbrales están muy próximos (menos de 15 puntos): LQAS necesitará muchos casos. Valora separarlos.");
-        if (n >= N && N) warns.push("Debes revisar TODA la población (n = N): con esos umbrales y riesgos no se puede ahorrar muestra.");
+        if (pU - pL < 0.15) warns.push("El umbral y el estándar están muy próximos (menos de 15 puntos): LQAS necesitará muchos casos. Valora separarlos.");
+        if (n >= N && N) warns.push("Hay que revisar TODO el lote (n = N): con esos valores no se puede ahorrar muestra.");
+        if (v.beta > 20) warns.push("Un error β (fuego sin alarma) mayor del 20 % es poco habitual: dejarías pasar demasiados servicios que están mal.");
         const notes = [];
-        if (hyp && r.binomial) notes.push(`Con N = ${nf(N, 0)} basta revisar <b>${n}</b> casos (hipergeométrica); si se ignorase el tamaño de la población (binomial) se necesitarían ${r.binomial.n} (d = ${r.binomial.d}).`);
-        if (hyp) notes.push("Con N conocido, K = round(p·N): los umbrales se redondean al número entero de casos conformes más cercano.");
-        notes.push("Entre pₗ y pᵤ (zona gris) el resultado puede ser cualquiera de las dos clasificaciones; LQAS no estima el cumplimiento real.");
-        const rule = `Revise <b>${n}</b> historias; si al menos <b>${d}</b> cumplen, la unidad <b>alcanza el estándar</b>; si cumplen ${d - 1} o menos, <b>no lo alcanza</b>.`;
+        if (hyp && r.binomial) notes.push(`Con un lote de N = ${nf(N, 0)} basta revisar <b>${n}</b> casos (hipergeométrica); si no se conociera el tamaño del lote (binomial) harían falta ${r.binomial.n} (c = ${r.binomial.d}).`);
+        if (hyp) notes.push("Con N conocido, el estándar y el umbral se redondean al número entero de casos que cumplen más cercano (K = round(p·N)). La hipergeométrica sigue siendo válida aunque la muestra sea más del 10 % del lote.");
+        notes.push("Entre el umbral y el estándar (zona gris) puede salir verde o rojo; LQAS no estima el cumplimiento real.");
+        notes.push("¿Por qué no coincide con las tablas de Lemeshow? Las tablas clásicas son aproximadas y, con muestras pequeñas, el error β real puede ser mucho mayor que el anunciado. Por ejemplo, para estándar 85 %, umbral 60 %, α 5 % y β 20 % la tabla da n = 16 y c = 11, pero esa regla tiene en realidad un β del 33 %. Esta calculadora hace el cálculo exacto, así que garantiza los errores que pides, a veces a cambio de algunos casos más (aquí, 22 y 16).");
+        const sem = `<div class="semaforo"><div class="sem sem--verde"><span class="sem-luz" aria-hidden="true"></span><div><b>${c} o más cumplen</b><span>Verde: sin evidencia de problema</span></div></div><div class="sem sem--rojo"><span class="sem-luz" aria-hidden="true"></span><div><b>${c - 1} o menos cumplen</b><span>Rojo: hay que investigar</span></div></div></div>`;
         return {
-          big: { label: "Casos a revisar (n)", value: nf(r.nFinal, 0), sub: `Regla de decisión: d = ${d} conformes` + (L > 0 ? ` · n evaluables = ${n}` : "") },
-          extras: [["n", nf(n, 0)], ["d", nf(d, 0)], ["α real", pc(r.alphaReal, 1)], ["β real", pc(r.betaReal, 1)], ["Modelo", hyp ? "Hipergeométrica" : "Binomial"]],
-          interp: rule + ` Si la unidad cumple de verdad un ${nf(v.pU)} % o más, la clasificará bien en el ${pc(1 - r.betaReal, 1)} de los casos; si cumple un ${nf(v.pL)} % o menos, solo la dará por adecuada por error el ${pc(r.alphaReal, 1)} de las veces.`,
-          warns, notes, steps, mini: `n = ${nf(r.nFinal, 0)} · d = ${d}`,
-          extraHtml: ocChart(n, d, N, pL, pU, r.alphaReal, r.betaReal)
+          big: { label: "Historias a revisar (n)", value: nf(r.nFinal, 0), sub: `Número de decisión c = ${c} cumplimientos` + (L > 0 ? ` · n evaluables = ${n}` : "") },
+          extras: [["n", nf(n, 0)], ["c", nf(c, 0)], ["α real", pc(aR, 1)], ["β real", pc(bR, 1)], ["Modelo", hyp ? "Hipergeométrica" : "Binomial"]],
+          interp: `Revisa <b>${n}</b> historias elegidas al azar. Si al menos <b>${c}</b> cumplen → <b>verde</b>: no hay evidencia de que se incumpla el estándar del ${nf(v.pU)} %. Si cumplen ${c - 1} o menos → <b>rojo</b>: hay que investigar. Si el servicio cumple de verdad el estándar, solo saldrá rojo por mala suerte el ${pc(aR, 1)} de las veces (falsa alarma); si está en el umbral del ${nf(v.pL)} % o peor, saldrá verde por error como mucho el ${pc(bR, 1)} de las veces (fuego sin alarma).`,
+          warns, notes, steps, mini: `n = ${nf(r.nFinal, 0)} · c = ${c}`,
+          sem, extraHtml: ocChart(n, c, N, pL, pU, aR, bR) + sorteoHtml(r.nFinal, N)
         };
       }
     }
   ];
 
   // ---------- Curva característica operativa (SVG propio) ----------
-  function ocChart(n, d, N, pL, pU, aReal, bReal) {
+  function ocChart(n, c, N, pL, pU, aR, bR) {
     const W = 360, H = 266, l = 40, r = 14, t = 30, b = 40, iw = W - l - r, ih = H - t - b;
     const X = p => l + p * iw, Y = q => t + (1 - q) * ih;
-    const pts = S.lqasOC(n, d, N, 100).map(o => `${X(o.p).toFixed(1)},${Y(o.pa).toFixed(1)}`).join(" ");
+    const pts = S.lqasOC(n, c, N, 100).map(o => `${X(o.p).toFixed(1)},${Y(o.pa).toFixed(1)}`).join(" ");
     let g = "";
     for (let i = 0; i <= 4; i++) {
       const f = i / 4;
       g += `<line class="grid" x1="${l}" y1="${Y(f)}" x2="${W - r}" y2="${Y(f)}"/><text class="axis-t" x="${l - 5}" y="${Y(f) + 4}" text-anchor="end">${f * 100}</text>`;
       g += `<line class="grid" x1="${X(f)}" y1="${t}" x2="${X(f)}" y2="${t + ih}"/><text class="axis-t" x="${X(f)}" y="${t + ih + 15}" text-anchor="middle">${f * 100}</text>`;
     }
-    const paL = aReal, paU = 1 - bReal;     // prob. de clasificar como adecuada en pL y en pU
+    const paL = bR, paU = 1 - aR;     // probabilidad de salir verde en el umbral y en el estándar
     const xl = X(pL), xu = X(pU);
     // Etiquetas arriba a la izquierda de cada punto: como la curva es creciente, a la izquierda
     // queda por debajo del punto y no se solapan con ella ni con la línea discontinua.
     const lbl = (cls, x, y, a, b2) => { const xx = Math.max(x - 7, l + 58); return `<text class="${cls}" x="${xx}" y="${y - 22}" text-anchor="end">${a}</text><text class="${cls}" x="${xx}" y="${y - 8}" text-anchor="end">${b2}</text>`; };
-    return `<div class="chart-card"><h3>Curva característica operativa</h3>
-<svg class="oc" viewBox="0 0 ${W} ${H}" role="img" aria-label="Probabilidad de clasificar la unidad como adecuada según su cumplimiento real">
+    return `<div class="chart-card"><h3>La «puerta de aceptación» (curva característica operativa)</h3>
+<svg class="oc" viewBox="0 0 ${W} ${H}" role="img" aria-label="Probabilidad de que salga verde según el cumplimiento real del servicio">
 ${g}
 <line class="mark-l" x1="${xl}" y1="${t}" x2="${xl}" y2="${t + ih}"/><line class="mark-u" x1="${xu}" y1="${t}" x2="${xu}" y2="${t + ih}"/>
 <polyline class="curve" points="${pts}"/>
 <circle class="pt-l" cx="${xl}" cy="${Y(paL)}" r="5"/><circle class="pt-u" cx="${xu}" cy="${Y(paU)}" r="5"/>
-${lbl("lbl-l", xl, Y(paL), `pₗ = ${nf(pL * 100, 1)} %`, `→ ${nf(paL * 100, 1)} %`)}
-${lbl("lbl-u", xu, Y(paU), `pᵤ = ${nf(pU * 100, 1)} %`, `→ ${nf(paU * 100, 1)} %`)}
-<text class="axis-t" x="${l + iw / 2}" y="${H - 5}" text-anchor="middle">Cumplimiento real de la unidad (%)</text>
-<text class="axis-t" transform="translate(11 ${t + ih / 2}) rotate(-90)" text-anchor="middle">Prob. de clasificar ADECUADA (%)</text>
+${lbl("lbl-l", xl, Y(paL), `Umbral ${nf(pL * 100, 1)} %`, `β: ${nf(paL * 100, 1)} %`)}
+${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 100, 1)} %`)}
+<text class="axis-t" x="${l + iw / 2}" y="${H - 5}" text-anchor="middle">Cumplimiento REAL del servicio (%) · lo que no vemos</text>
+<text class="axis-t" transform="translate(11 ${t + ih / 2}) rotate(-90)" text-anchor="middle">Prob. de que salga VERDE (%)</text>
 </svg>
-<p>Con la regla n = ${n}, d = ${d}: una unidad con cumplimiento real <b>${nf(pL * 100, 1)} %</b> se clasifica como adecuada el ${nf(paL * 100, 1)} % de las veces (error α); una con <b>${nf(pU * 100, 1)} %</b> se clasifica como adecuada el ${nf(paU * 100, 1)} % de las veces (1 − β). La curva sube de forma abrupta entre ambos umbrales.</p></div>`;
+<p>Cómo leerla: en horizontal, el cumplimiento real del servicio (que no conocemos); en vertical, la probabilidad de que la muestra salga <b>verde</b> con la regla n = ${n}, c = ${c}. Un servicio en el <b>umbral (${nf(pL * 100, 1)} %)</b> sale verde por error el ${nf(paL * 100, 1)} % de las veces (error β, fuego sin alarma). Uno que cumple el <b>estándar (${nf(pU * 100, 1)} %)</b> sale verde el ${nf(paU * 100, 1)} % de las veces; el ${nf(aR * 100, 1)} % restante es el error α (falsa alarma). Cuanto más empinada la curva entre las dos líneas, mejor separa los servicios buenos de los malos.</p></div>`;
+  }
+
+  // ---------- Sorteo de casos (muestreo aleatorio simple o sistemático) ----------
+  function sorteoHtml(n, N) {
+    if (!N) return `<div class="chart-card sorteo no-print"><h3>¿Cómo elijo los casos al azar?</h3><p>Si indicas el tamaño de la población o del lote (N), la app puede sortear por ti qué casos revisar. Si no, numera el listado y sortea con la función ALEATORIO.ENTRE de una hoja de cálculo.</p></div>`;
+    const m = Math.min(n, N);
+    return `<div class="chart-card sorteo no-print"><h3>Sortear qué casos revisar</h3><p>Numera el listado del 1 al ${nf(N, 0)} (por ejemplo, por orden de fecha) y pulsa un botón. Sale una lista de ${nf(m, 0)} números distintos: esos son los casos a revisar. Es la «cucharada bien removida».</p>
+<div class="toolbar"><button class="btn btn--primary" type="button" data-act="sortear" data-tipo="simple" data-n="${m}" data-pop="${N}">Sorteo aleatorio simple</button><button class="btn" type="button" data-act="sortear" data-tipo="sist" data-n="${m}" data-pop="${N}">Muestreo sistemático</button></div>
+<div class="sorteo-out" aria-live="polite"></div></div>`;
+  }
+  function sortear(tipo, n, N) {
+    const rnd = k => Math.floor(Math.random() * k);   // entero 0..k-1
+    let nums, txt;
+    if (tipo === "sist") {
+      const k = N / n, start = Math.random() * k;
+      nums = Array.from({ length: n }, (_, i) => Math.floor(start + i * k) + 1);
+      txt = `Salto k = N ÷ n = ${nf(N, 0)} ÷ ${nf(n, 0)} = ${nf(k, 2)}; arranque al azar en el ${nums[0]}. <b>Ojo:</b> si el listado tiene un patrón que se repite (por ejemplo, el mismo día de la semana cada cierto número de casos), el salto puede dejar fuera siempre lo mismo; compruébalo antes.`;
+    } else {
+      const set = new Set(); while (set.size < n) set.add(rnd(N) + 1);
+      nums = [...set].sort((a, b) => a - b);
+      txt = "Todos los casos tenían la misma probabilidad de salir. Si un caso no sirve (historia no localizable…), sustitúyelo por el siguiente de un sorteo nuevo, no por el que tengas más a mano.";
+    }
+    return `<p class="sorteo-nums">${nums.join(", ")}</p><p class="step-note">${txt}</p>`;
   }
 
   // ---------- Estado ----------
@@ -410,6 +550,10 @@ ${lbl("lbl-u", xu, Y(paU), `pᵤ = ${nf(pU * 100, 1)} %`, `→ ${nf(paU * 100, 1
     return `<div class="field">${hdr}${body}</div>`;
   }
 
+  const KEY_FACIL = "tammuestral-facil-abierto";
+  function facilAbierto() { try { return localStorage.getItem(KEY_FACIL) === "1"; } catch (e) { return false; } }
+  view.addEventListener("toggle", e => { if (e.target.matches && e.target.matches("details.facil")) { try { localStorage.setItem(KEY_FACIL, e.target.open ? "1" : "0"); } catch (er) { /* */ } } }, true);
+
   function renderCalc(c) {
     current = c; initState(c);
     document.title = "Tamaño muestral · " + c.short;
@@ -417,6 +561,8 @@ ${lbl("lbl-u", xu, Y(paU), `pᵤ = ${nf(pU * 100, 1)} %`, `→ ${nf(paU * 100, 1
       <div class="print-only print-head"><h1>Informe de tamaño muestral</h1><p>${esc(c.title)} · ${new Date().toLocaleDateString("es-ES")}</p></div>
       <h1 class="page-title">${esc(c.title)}</h1>
       <div class="intro"><p><b>¿Qué es?</b> ${c.what}</p><p><b>¿Cuándo usarla?</b> ${c.when}</p></div>
+      <div class="box box--idea no-print"><span class="box-tag">Idea clave</span><p>${c.idea}</p></div>
+      <details class="facil no-print"${facilAbierto() ? " open" : ""}><summary>Explicado fácil, con un ejemplo resuelto</summary><div class="facil-body">${c.facil}</div></details>
       <div class="toolbar no-print">
         <button class="btn btn--primary" data-act="ejemplo">Cargar ejemplo</button>
         <button class="btn" data-act="limpiar">Restablecer</button>
@@ -479,6 +625,7 @@ ${lbl("lbl-u", xu, Y(paU), `pᵤ = ${nf(pU * 100, 1)} %`, `→ ${nf(paU * 100, 1
     out.innerHTML = `
       <div class="result-card"><div class="res-label">${esc(res.big.label)}</div><div class="res-big">${esc(res.big.value)}</div><div class="res-sub">${esc(res.big.sub)}</div>
         <div class="extras">${res.extras.map(e => `<span class="extra">${esc(e[0])}: <b>${esc(e[1])}</b></span>`).join("")}</div></div>
+      ${res.sem || ""}
       <div class="interp"><b>En lenguaje llano.</b> ${res.interp}</div>
       ${res.warns.map(w => `<div class="warn">⚠ ${w}</div>`).join("")}
       ${(res.notes || []).map(w => `<div class="note">ℹ ${w}</div>`).join("")}
@@ -494,6 +641,10 @@ ${lbl("lbl-u", xu, Y(paU), `pᵤ = ${nf(pU * 100, 1)} %`, `→ ${nf(paU * 100, 1
     view.innerHTML = `
       <h1 class="page-title">¿Qué calculadora necesito?</h1>
       <p class="page-lead">Elige según lo que quieras hacer. Cada calculadora explica qué es, ayuda a rellenar cada parámetro y muestra el desarrollo paso a paso.</p>
+      <div class="antes">
+        <div class="box box--idea"><span class="box-tag">Idea clave: la cucharada de sopa</span><p>Para saber si la sopa está salada no hace falta tomarse la olla entera: basta una cucharada, <b>después de removerla bien</b>. Remover es el azar: sin remover, la cucharada puede salir del fondo, donde está toda la sal. Una <b>muestra aleatoria</b> es una cucharada bien removida.</p></div>
+        <div class="box box--practica"><span class="box-tag">La pregunta que lo cambia todo: ¿estimar o decidir?</span><p><b>Estimar</b> es pesar el paquete en una báscula de precisión: tarda más y da un número («el 78 % cumple, ±10 %»). <b>Decidir</b> es pasar por el arco del aeropuerto: no dice cuánto metal llevas, solo pita o no pita («alcanza el estándar / hay que investigar»). Para muchas auditorías, con el arco basta: es <b>LQAS</b>, y necesita muchos menos casos.</p></div>
+      </div>
       <div class="guide">${CALCS.map((c, i) => `<a class="guide-card" href="#/${c.id}"><span class="guide-num">${i + 1}</span><span><div class="guide-q">${esc(c.q)}</div><div class="guide-a">→ ${c.a}</div></span><span class="guide-go">›</span></a>`).join("")}</div>
       <div class="glossary"><details class="gloss"><summary>Conceptos clave en 1 minuto</summary><dl class="gloss-body">
         <dt>Confianza (1 − α)</dt><dd>Seguridad con que el intervalo contiene el valor real. 95 % es lo habitual.</dd>
@@ -501,9 +652,19 @@ ${lbl("lbl-u", xu, Y(paU), `pᵤ = ${nf(pU * 100, 1)} %`, `→ ${nf(paU * 100, 1
         <dt>Potencia (1 − β)</dt><dd>Probabilidad de detectar una diferencia real. Mínimo recomendable: 80 %.</dd>
         <dt>Pérdidas</dt><dd>Casos que no podrás analizar; se compensan aumentando la muestra.</dd>
         <dt>Población finita (N)</dt><dd>Si la muestra es una fracción importante de la población, se necesitan menos casos.</dd>
+        <dt>Error α y error β en LQAS</dt><dd>α = falsa alarma (sale rojo un servicio que cumple). β = fuego sin alarma (sale verde un servicio que está mal). Lo habitual: α 5 %, β 20 % o 10 %.</dd>
         <dt>Estimar frente a clasificar</dt><dd>Estimar da una cifra con su intervalo (muestras grandes); clasificar (LQAS) solo decide «alcanza / no alcanza» con muestras pequeñas.</dd>
         <dt>Muestreo aleatorio</dt><dd>Todas las fórmulas suponen que los casos se eligen al azar. Si no es así, los resultados pueden no ser válidos.</dd>
-      </dl></details></div>`;
+      </dl></details>
+      <details class="gloss"><summary>Cómo elegir los casos al azar</summary><div class="gloss-body">
+        <div class="table-wrap"><table class="mini facil-tabla"><thead><tr><th>Método</th><th>Cómo se hace</th><th>Cuándo conviene</th></tr></thead><tbody>
+          <tr><td><b>Aleatorio simple</b></td><td>Se numera el listado y se sortean números (la app lo hace por ti si indicas N, o con ALEATORIO.ENTRE en una hoja de cálculo).</td><td>Listado completo y casos parecidos entre sí.</td></tr>
+          <tr><td><b>Sistemático</b></td><td>Se calcula un salto k = N ÷ n, se arranca al azar y se toma un caso cada k. Ej.: N = 600, n = 50, k = 12; arranque en el 7: casos 7, 19, 31, 43…</td><td>Listado ordenado sin patrones; es el más cómodo.</td></tr>
+          <tr><td><b>Estratificado</b></td><td>Se divide en grupos (turnos, unidades, consultas) y se sortea dentro de cada uno.</td><td>Hay subgrupos distintos y todos deben estar representados.</td></tr>
+          <tr><td><b>De conveniencia</b></td><td>Se coge lo que está a mano.</td><td><b>No es recomendable para auditar.</b></td></tr>
+        </tbody></table></div>
+        <p><b>Ojo, trampa:</b> en el sistemático, si el listado tiene un patrón (por ejemplo, cada 12.º caso coincide siempre con el mismo día de la semana), el salto puede dejar fuera siempre lo mismo. Compruébalo antes de empezar.</p>
+      </div></details></div>`;
   }
 
   // ---------- Enrutado ----------
@@ -547,6 +708,7 @@ ${lbl("lbl-u", xu, Y(paU), `pᵤ = ${nf(pU * 100, 1)} %`, `→ ${nf(paU * 100, 1
         delete state[current.id]; initState(current); syncInputs(); update(); $("#example-text").hidden = true;
       } else if (a === "imprimir") window.print();
       else if (a === "ver") $("#res").scrollIntoView({ behavior: "smooth", block: "start" });
+      else if (a === "sortear") { const o = b.closest(".sorteo").querySelector(".sorteo-out"); o.innerHTML = sortear(b.dataset.tipo, Number(b.dataset.n), Number(b.dataset.pop)); }
     }
   });
 

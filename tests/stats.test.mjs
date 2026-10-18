@@ -77,4 +77,16 @@ t("curva OC: monótona creciente y valores en pL/pU coherentes", () => {
 });
 t("sin solución (umbrales indistinguibles con N=10: K_L=K_U) -> found=false", () => assert.equal(S.lqas({ pU: 0.52, pL: 0.5, alpha: 0.05, beta: 0.05, N: 10 }).found, false));
 
+
+console.log("\n6. Ejemplos del tema 4 del curso (convención de Saturno: α en el estándar, β en el umbral)");
+// En Stats.lqas, alpha = riesgo en pL (aceptar un servicio malo) = β del curso; beta = α del curso.
+const curso = (pU, pL, aC, bC, N = 0) => S.lqas({ pU, pL, alpha: bC, beta: aC, N });
+t("dolor en triaje 85/60, α 5 %, β 20 %: n=22, c=16", () => { const r = curso(0.85, 0.60, 0.05, 0.20); assert.equal(r.n, 22); assert.equal(r.d, 16); });
+t("dolor en triaje con lote N=150: n=18, c=13", () => { const r = curso(0.85, 0.60, 0.05, 0.20, 150); assert.equal(r.n, 18); assert.equal(r.d, 13); });
+t("la regla de la tabla de Lemeshow 16/11 tiene un β real ≈ 33 % (no 20 %)", () => close(S.lqasPAccept(16, 11, 0, 0.60), 0.329, 1e-3));
+t("tabla rápida del tema: N=200 y ±10 % → 66; N=50 y ±5 % → 45", () => {
+  assert.equal(S.sampleProportion({ conf: 0.95, e: 0.10, p: 0.5, N: 200 }).n, 66);
+  assert.equal(S.sampleProportion({ conf: 0.95, e: 0.05, p: 0.5, N: 50 }).n, 45);
+});
+
 console.log(`\n${ok} pruebas superadas.`);

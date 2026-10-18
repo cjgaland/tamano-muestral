@@ -19,13 +19,18 @@ z = cuantil normal (Acklam + un paso de Halley, error < 1e-9; erfc propia). Siem
 2. Media: n0 = z²σ²/e²; misma corrección finita.
 3. Dos proporciones (Fleiss, Levin y Paik): p̄=(p1+k p2)/(1+k); n1=[zα√((1+1/k)p̄q̄)+zβ√(p1q1+p2q2/k)]²/(p1−p2)²; n2=k·n1. Corrección de continuidad opcional: n1'=(n1/4)(1+√(1+2(k+1)/(k n1 |p1−p2|)))².
 4. Dos medias: n1=(1+1/k)σ²(zα+zβ)²/Δ²; n2=k·n1.
-5. LQAS (Lemeshow y Taber 1991; Robertson y Valadez 2006): menor n (1..min(N,1000)) con algún d tal que P(X≥d|pL)≤α y P(X<d|pU)≤β; entre varios d, el que minimiza max(α real, β real). X~Binomial(n,p), o Hipergeométrica(N,K=round(pN),n) si N conocido. pmf con log-gamma (Lanczos g=7). Curva OC = P(X≥d|p).
+5. LQAS (Lemeshow y Taber 1991; Robertson y Valadez 2006; Saturno, UT 20, 1999): menor n (1..min(N,1000)) con algún c tal que P(X<c|pᵤ)≤α y P(X≥c|pₗ)≤β; entre varios c, el que minimiza max(α real, β real).
+   **Convención de la interfaz = la del curso (Saturno, tema 4):** α = falsa alarma (rechazar un servicio que cumple el estándar, en pᵤ); β = fuego sin alarma (aceptar uno en el umbral o peor, en pₗ). Por defecto α 5 %, β 20 %. `Stats.lqas` conserva la convención inversa (su `alpha` es el riesgo en pₗ y devuelve `d` = c), y `app.js` las cruza al llamarla; no cambiar una sin la otra. X~Binomial(n,p), o Hipergeométrica(N,K=round(pN),n) si N conocido. pmf con log-gamma (Lanczos g=7). Curva OC = P(X≥d|p).
 
 ## 4. Decisiones
 - Los porcentajes se introducen en % y se convierten a proporciones en `compute`; los textos de desarrollo muestran las proporciones sustituidas.
 - LQAS con N: la regla (d) se aplica a n casos evaluables; las pérdidas solo aumentan los casos a seleccionar (limitado a N). Con N conocido se avisa de la n binomial equivalente. Si K_L = K_U tras redondear, se pide separar umbrales.
 - Un censo (n = N) siempre es una solución válida con N conocido, por lo que LQAS hipergeométrico siempre encuentra solución si K_L < K_U.
 - Supone muestreo aleatorio simple (se avisa en Acerca de).
+- Las tablas de Lemeshow/Saturno del tema 4 son aproximadas (p. ej. 85/60, α 5 %, β 20 %: tabla 16/11 con β real 33 %; app exacta 22/16). La app no las usa; lo explica en una nota y hay test.
+- Cada calculadora tiene `idea` (caja siempre visible) y `facil` (HTML en `<details>`, plegado por defecto, se recuerda en `tammuestral-facil-abierto`). Contenido adaptado del tema 4 del curso de Auditorías (Rafa): sopa, báscula/arco, semáforo, galletas, falsa alarma/fuego sin alarma. Cifras de los ejemplos comprobadas con la app y R.
+- `tablaRapida()` calcula la tabla N × margen con `Stats` (no copiada de un libro).
+- Sorteo de casos (`sorteoHtml`/`sortear`) en proporción, media y LQAS cuando se conoce N: aleatorio simple o sistemático (k = N/n, arranque al azar). Usa Math.random (suficiente para elegir historias).
 - `compute` devuelve `warns` (⚠ ámbar: algo dudoso en los datos) y `notes` (ℹ verde azulado: información, p. ej. n binomial equivalente, redondeo de K, zona gris, z frente a t). No mezclar.
 - Dos medias usa z (63 por grupo en el caso de referencia); `power.t.test` de R, con t, da 64. Se explica en una nota.
 - Layout: las rejillas usan `minmax(0, 1fr)` y `min-width: 0` para que las fórmulas largas no ensanchen la página en móvil. Las fórmulas usan `pre-wrap`.
