@@ -26,6 +26,12 @@ z = cuantil normal (Acklam + un paso de Halley, error < 1e-9; erfc propia). Siem
 - LQAS con N: la regla (d) se aplica a n casos evaluables; las pérdidas solo aumentan los casos a seleccionar (limitado a N). Con N conocido se avisa de la n binomial equivalente. Si K_L = K_U tras redondear, se pide separar umbrales.
 - Un censo (n = N) siempre es una solución válida con N conocido, por lo que LQAS hipergeométrico siempre encuentra solución si K_L < K_U.
 - Supone muestreo aleatorio simple (se avisa en Acerca de).
+- `compute` devuelve `warns` (⚠ ámbar: algo dudoso en los datos) y `notes` (ℹ verde azulado: información, p. ej. n binomial equivalente, redondeo de K, zona gris, z frente a t). No mezclar.
+- Dos medias usa z (63 por grupo en el caso de referencia); `power.t.test` de R, con t, da 64. Se explica en una nota.
+- Layout: las rejillas usan `minmax(0, 1fr)` y `min-width: 0` para que las fórmulas largas no ensanchen la página en móvil. Las fórmulas usan `pre-wrap`.
+- Curva OC: etiquetas de pₗ y pᵤ arriba a la izquierda de su punto (la curva es creciente, así nunca la pisan).
+- «Cargar ejemplo» solo desplaza hacia el resultado en móvil (< 900 px).
+- Pendiente: probar instalación como PWA y modo sin conexión en un navegador real (el navegador integrado de Claude Code no admite service workers).
 
 ## 5. Entorno
 Node v26 (Homebrew). Si `node` fallara por una dylib de Homebrew (`libsimdjson`), ejecutar `brew upgrade node` o `brew reinstall node`. R 4.6.1 disponible (`Rscript`) para verificar cálculos.

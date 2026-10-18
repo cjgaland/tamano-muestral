@@ -10,7 +10,7 @@
   // ---------- Utilidades de formato ----------
   const nf = (x, d = 2) => Number.isFinite(x) ? x.toLocaleString("es-ES", { maximumFractionDigits: d, minimumFractionDigits: 0 }) : "—";
   const nfix = (x, d) => Number.isFinite(x) ? x.toLocaleString("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d }) : "—";
-  const pc = (x, d = 2) => nf(x * 100, d) + " %";               // proporción -> "50 %"
+  const pc = (x, d = 2) => nf(x * 100, d) + "\u00a0%";               // proporción -> "50 %"
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -244,13 +244,14 @@
         if (d > 1.5) warns.push("Una diferencia mayor de 1,5 desviaciones típicas es un efecto muy grande y poco habitual: comprueba que σ y Δ están en las mismas unidades.");
         if (sides === 1) warns.push("Contraste unilateral: solo es defendible si se decidió antes del estudio y una diferencia en el sentido contrario carece de interés.");
         if (v.power < 80) warns.push("Una potencia inferior al 80 % es poco habitual.");
+        const notes = ["Esta fórmula usa la distribución normal (z), la habitual en los textos de referencia. Si el análisis se hará con la t de Student, el cálculo exacto con t (p. ej. <code>power.t.test</code> en R) suele pedir 1 o 2 casos más por grupo; la diferencia solo importa con muestras pequeñas. Ejemplo: σ = 10, Δ = 5, α = 5 % bilateral y potencia 80 % dan 63 por grupo con z y 64 con t."];
         const tot = r.n1Final + r.n2Final;
         const grupos = k === 1;
         return {
           big: { label: grupos ? "Casos necesarios por grupo" : "Casos necesarios en el grupo 1", value: nf(r.n1Final, 0), sub: grupos ? `Total: ${nf(tot, 0)} casos (2 grupos)` : `Grupo 2: ${nf(r.n2Final, 0)} · Total: ${nf(tot, 0)}` },
           extras: [["Grupo 1", nf(r.n1Final, 0)], ["Grupo 2", nf(r.n2Final, 0)], ["Total", nf(tot, 0)], L > 0 ? ["Sin pérdidas (total)", nf(r.n1 + r.n2, 0)] : null].filter(Boolean),
           interp: `Con <b>${nf(r.n1Final, 0)}</b> casos en el grupo 1 y <b>${nf(r.n2Final, 0)}</b> en el grupo 2, tendrás un <b>${nf(v.power)} %</b> de probabilidad de detectar como significativa (α = ${nf(v.alpha)} %) una diferencia real de al menos <b>${nf(v.delta)}</b> unidades entre las medias, si la desviación típica es ${nf(v.sigma)}.`,
-          warns, steps, mini: nf(r.n1Final, 0) + " + " + nf(r.n2Final, 0)
+          warns, notes, steps, mini: nf(r.n1Final, 0) + " + " + nf(r.n2Final, 0)
         };
       }
     },
@@ -309,15 +310,16 @@
         const warns = [];
         if (pU - pL < 0.15) warns.push("Los umbrales están muy próximos (menos de 15 puntos): LQAS necesitará muchos casos. Valora separarlos.");
         if (n >= N && N) warns.push("Debes revisar TODA la población (n = N): con esos umbrales y riesgos no se puede ahorrar muestra.");
-        if (hyp && r.binomial) warns.push(`Con N = ${nf(N, 0)} basta revisar <b>${n}</b> casos (hipergeométrica); si se ignorase el tamaño de la población (binomial) se necesitarían ${r.binomial.n} (d = ${r.binomial.d}).`);
-        if (hyp) warns.push("Con N conocido, K = round(p·N): los umbrales se redondean al número entero de casos conformes más cercano.");
-        warns.push("Entre pₗ y pᵤ (zona gris) el resultado puede ser cualquiera de las dos clasificaciones; LQAS no estima el cumplimiento real.");
+        const notes = [];
+        if (hyp && r.binomial) notes.push(`Con N = ${nf(N, 0)} basta revisar <b>${n}</b> casos (hipergeométrica); si se ignorase el tamaño de la población (binomial) se necesitarían ${r.binomial.n} (d = ${r.binomial.d}).`);
+        if (hyp) notes.push("Con N conocido, K = round(p·N): los umbrales se redondean al número entero de casos conformes más cercano.");
+        notes.push("Entre pₗ y pᵤ (zona gris) el resultado puede ser cualquiera de las dos clasificaciones; LQAS no estima el cumplimiento real.");
         const rule = `Revise <b>${n}</b> historias; si al menos <b>${d}</b> cumplen, la unidad <b>alcanza el estándar</b>; si cumplen ${d - 1} o menos, <b>no lo alcanza</b>.`;
         return {
           big: { label: "Casos a revisar (n)", value: nf(r.nFinal, 0), sub: `Regla de decisión: d = ${d} conformes` + (L > 0 ? ` · n evaluables = ${n}` : "") },
           extras: [["n", nf(n, 0)], ["d", nf(d, 0)], ["α real", pc(r.alphaReal, 1)], ["β real", pc(r.betaReal, 1)], ["Modelo", hyp ? "Hipergeométrica" : "Binomial"]],
           interp: rule + ` Si la unidad cumple de verdad un ${nf(v.pU)} % o más, la clasificará bien en el ${pc(1 - r.betaReal, 1)} de los casos; si cumple un ${nf(v.pL)} % o menos, solo la dará por adecuada por error el ${pc(r.alphaReal, 1)} de las veces.`,
-          warns, steps, mini: `n = ${nf(r.nFinal, 0)} · d = ${d}`,
+          warns, notes, steps, mini: `n = ${nf(r.nFinal, 0)} · d = ${d}`,
           extraHtml: ocChart(n, d, N, pL, pU, r.alphaReal, r.betaReal)
         };
       }
@@ -326,7 +328,7 @@
 
   // ---------- Curva característica operativa (SVG propio) ----------
   function ocChart(n, d, N, pL, pU, aReal, bReal) {
-    const W = 360, H = 250, l = 40, r = 14, t = 14, b = 40, iw = W - l - r, ih = H - t - b;
+    const W = 360, H = 266, l = 40, r = 14, t = 30, b = 40, iw = W - l - r, ih = H - t - b;
     const X = p => l + p * iw, Y = q => t + (1 - q) * ih;
     const pts = S.lqasOC(n, d, N, 100).map(o => `${X(o.p).toFixed(1)},${Y(o.pa).toFixed(1)}`).join(" ");
     let g = "";
@@ -337,17 +339,19 @@
     }
     const paL = aReal, paU = 1 - bReal;     // prob. de clasificar como adecuada en pL y en pU
     const xl = X(pL), xu = X(pU);
-    const anL = xl < l + 90 ? "start" : "end", dxL = anL === "start" ? 8 : -8;
+    // Etiquetas arriba a la izquierda de cada punto: como la curva es creciente, a la izquierda
+    // queda por debajo del punto y no se solapan con ella ni con la línea discontinua.
+    const lbl = (cls, x, y, a, b2) => { const xx = Math.max(x - 7, l + 58); return `<text class="${cls}" x="${xx}" y="${y - 22}" text-anchor="end">${a}</text><text class="${cls}" x="${xx}" y="${y - 8}" text-anchor="end">${b2}</text>`; };
     return `<div class="chart-card"><h3>Curva característica operativa</h3>
 <svg class="oc" viewBox="0 0 ${W} ${H}" role="img" aria-label="Probabilidad de clasificar la unidad como adecuada según su cumplimiento real">
 ${g}
 <line class="mark-l" x1="${xl}" y1="${t}" x2="${xl}" y2="${t + ih}"/><line class="mark-u" x1="${xu}" y1="${t}" x2="${xu}" y2="${t + ih}"/>
 <polyline class="curve" points="${pts}"/>
 <circle class="pt-l" cx="${xl}" cy="${Y(paL)}" r="5"/><circle class="pt-u" cx="${xu}" cy="${Y(paU)}" r="5"/>
-<text class="lbl-l" x="${xl + dxL}" y="${Y(paL) - 8}" text-anchor="${anL}">pₗ ${nf(pL * 100, 1)} %: ${nf(paL * 100, 1)} %</text>
-<text class="lbl-u" x="${W - r}" y="${Y(0.2)}" text-anchor="end">pᵤ ${nf(pU * 100, 1)} %: ${nf(paU * 100, 1)} %</text>
+${lbl("lbl-l", xl, Y(paL), `pₗ = ${nf(pL * 100, 1)} %`, `→ ${nf(paL * 100, 1)} %`)}
+${lbl("lbl-u", xu, Y(paU), `pᵤ = ${nf(pU * 100, 1)} %`, `→ ${nf(paU * 100, 1)} %`)}
 <text class="axis-t" x="${l + iw / 2}" y="${H - 5}" text-anchor="middle">Cumplimiento real de la unidad (%)</text>
-<text class="axis-t" transform="translate(11 ${t + ih / 2}) rotate(-90)" text-anchor="middle">Prob. de clasificarla ADECUADA (%)</text>
+<text class="axis-t" transform="translate(11 ${t + ih / 2}) rotate(-90)" text-anchor="middle">Prob. de clasificar ADECUADA (%)</text>
 </svg>
 <p>Con la regla n = ${n}, d = ${d}: una unidad con cumplimiento real <b>${nf(pL * 100, 1)} %</b> se clasifica como adecuada el ${nf(paL * 100, 1)} % de las veces (error α); una con <b>${nf(pU * 100, 1)} %</b> se clasifica como adecuada el ${nf(paU * 100, 1)} % de las veces (1 − β). La curva sube de forma abrupta entre ambos umbrales.</p></div>`;
   }
@@ -460,6 +464,7 @@ ${g}
         <div class="extras">${res.extras.map(e => `<span class="extra">${esc(e[0])}: <b>${esc(e[1])}</b></span>`).join("")}</div></div>
       <div class="interp"><b>En lenguaje llano.</b> ${res.interp}</div>
       ${res.warns.map(w => `<div class="warn">⚠ ${w}</div>`).join("")}
+      ${(res.notes || []).map(w => `<div class="note">ℹ ${w}</div>`).join("")}
       ${res.extraHtml || ""}
       <details class="steps"${wasOpen ? " open" : ""}><summary>Desarrollo paso a paso</summary><div class="steps-body"><ol>${stepsHtml}</ol></div></details>
       ${paramsTable(c)}
@@ -520,7 +525,7 @@ ${g}
       if (a === "ejemplo") {
         Object.assign(state[current.id], current.example); syncInputs(); update();
         const et = $("#example-text"); et.textContent = current.exampleText; et.hidden = false;
-        $("#res").scrollIntoView({ behavior: "smooth", block: "nearest" });
+        if (!matchMedia("(min-width: 900px)").matches) $("#res").scrollIntoView({ behavior: "smooth", block: "nearest" });
       } else if (a === "limpiar") {
         delete state[current.id]; initState(current); syncInputs(); update(); $("#example-text").hidden = true;
       } else if (a === "imprimir") window.print();

@@ -55,6 +55,11 @@ t("binomial: la regla coincide con cdf directa", () => {
 const hyp = S.lqas({ ...base, N: 100 });
 console.log(`     hipergeométrica N=100: n=${hyp.n}, d=${hyp.d}, α real=${hyp.alphaReal.toFixed(4)}, β real=${hyp.betaReal.toFixed(4)} (K=${hyp.KL}/${hyp.KU})`);
 t("hipergeométrica N=100: n=16, d=11", () => { assert.equal(hyp.n, 16); assert.equal(hyp.d, 11); });
+t("hipergeométrica N=30: n=13, d=9, α real 0,0697, β real 0,0397 (R: phyper)", () => {
+  const h = S.lqas({ ...base, N: 30 });
+  assert.equal(h.n, 13); assert.equal(h.d, 9);
+  close(h.alphaReal, 0.0697, 5e-5); close(h.betaReal, 0.0397, 5e-5);
+});
 t("N pequeño: n hipergeométrico <= binomial", () => { for (const N of [30, 50, 100, 200]) assert.ok(S.lqas({ ...base, N }).n <= bin.n, "N=" + N); });
 t("N enorme (1e6): hipergeométrica ~ binomial (mismo n y d)", () => {
   const h = S.lqas({ ...base, N: 1e6 });

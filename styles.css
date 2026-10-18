@@ -102,9 +102,10 @@ details[open] > summary::before { transform: rotate(90deg); }
 .gloss-body dd { margin: 0; }
 
 /* ---------- Layout calculadora ---------- */
-.calc-grid { display: grid; gap: 14px; }
+.calc-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.calc-grid > * { min-width: 0; }
 @media (min-width: 900px) {
-  .calc-grid { grid-template-columns: minmax(340px, 440px) 1fr; align-items: start; }
+  .calc-grid { grid-template-columns: minmax(340px, 440px) minmax(0, 1fr); align-items: start; }
   .calc-result-col { position: sticky; top: calc(var(--header-h) + 62px); }
 }
 
@@ -150,15 +151,17 @@ details[open] > summary::before { transform: rotate(90deg); }
 .extra b { color: var(--text-1); font-size: 15px; }
 .interp { margin: 12px 0; padding: 12px 14px; border-radius: var(--radius); background: var(--green-dim); border-left: 4px solid var(--green); font-size: 15px; }
 .warn { margin: 8px 0; padding: 10px 12px; border-radius: var(--radius); background: var(--amber-dim); border-left: 4px solid var(--amber); font-size: 14px; }
+.note { margin: 8px 0; padding: 10px 12px; border-radius: var(--radius); background: var(--cyan-dim); border-left: 4px solid var(--cyan); font-size: 14px; color: var(--text-2); }
 .error-box { padding: 14px; border-radius: var(--radius-lg); background: var(--red-dim); border: 1px solid var(--red); color: var(--text-1); font-size: 14.5px; }
 .error-box ul { margin: 6px 0 0; padding-left: 20px; }
 .placeholder-box { padding: 24px 14px; text-align: center; color: var(--text-3); border: 1.5px dashed var(--border-lite); border-radius: var(--radius-lg); }
 
 .steps-body { padding: 0 14px 14px; }
-.steps-body ol { margin: 0; padding-left: 22px; display: grid; gap: 12px; }
+.steps-body ol { margin: 0; padding-left: 22px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .steps-body li::marker { color: var(--cyan); font-weight: 700; }
 .step-t { font-weight: 700; margin-bottom: 4px; }
-.formula { font-family: var(--mono); font-size: 13.5px; background: var(--bg-3); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; margin: 4px 0; overflow-x: auto; white-space: pre; }
+.formula { font-family: var(--mono); font-size: 13.5px; background: var(--bg-3); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; margin: 4px 0; overflow-x: auto; white-space: pre-wrap; }
+@media (max-width: 480px) { .formula { font-size: 12.5px; padding: 6px 8px; } }
 .step-note { font-size: 13.5px; color: var(--text-2); margin-top: 4px; }
 .table-wrap { overflow-x: auto; }
 table.mini { border-collapse: collapse; font-size: 13.5px; width: 100%; }
@@ -169,7 +172,7 @@ table.mini tr.sel { background: var(--cyan-dim); font-weight: 700; }
 .chart-card { margin: 12px 0; padding: 12px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-lg); }
 .chart-card h3 { font-size: 15px; margin-bottom: 4px; }
 .chart-card p { margin: 6px 0 0; font-size: 13px; color: var(--text-2); }
-svg.oc { width: 100%; height: auto; display: block; }
+svg.oc { width: 100%; max-width: 520px; margin: 0 auto; height: auto; display: block; }
 svg.oc .grid { stroke: var(--border); stroke-width: 1; }
 svg.oc .axis-t { fill: var(--text-3); font: 11px var(--font); }
 svg.oc .curve { fill: none; stroke: var(--cyan); stroke-width: 3; stroke-linejoin: round; }
