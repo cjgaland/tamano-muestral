@@ -4,7 +4,7 @@
 //  Al cambiar cualquier archivo, incrementa CACHE_NAME.
 // ============================================================
 
-const CACHE_NAME = "tamano-muestral-v2";
+const CACHE_NAME = "tamano-muestral-v3";
 
 const ASSETS = [
   "./",
@@ -22,7 +22,13 @@ const ASSETS = [
 ];
 
 self.addEventListener("install", event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // Sin skipWaiting aquí: la versión nueva espera hasta que el usuario pulse
+  // «Actualizar» en el aviso de la app (mensaje SKIP_WAITING).
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
+});
+
+self.addEventListener("message", event => {
+  if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", event => {

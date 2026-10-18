@@ -53,6 +53,7 @@
   <footer class="app-footer">
     Aplicación desarrollada por Carlos J. Galán Doval · Médico de Familia · Técnico en Calidad y Seguridad del Paciente · Hospital de Montilla · Córdoba · Andalucía.
     De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.
+    <span class="footer-version" id="footer-version"></span>
   </footer>
 
   <!-- MODAL BIENVENIDA -->
@@ -100,8 +101,25 @@
           <strong>Limitaciones</strong>
           <p>Se asume muestreo aleatorio simple. Si el muestreo es por conglomerados o estratificado, multiplica por el efecto de diseño o consulta a un estadístico.</p>
         </div>
+        <div class="modal-bloque">
+          <strong>Historial de versiones</strong>
+          <div id="historial-versiones"></div>
+        </div>
+        <p class="about-version" id="about-version"></p>
         <p class="about-credit"><b>Aplicación desarrollada por Carlos J. Galán Doval</b> · Médico de Familia · Técnico en Calidad y Seguridad del Paciente · Hospital de Montilla · Córdoba · Andalucía. De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.</p>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL NOVEDADES (tras actualizar) -->
+  <div class="modal-overlay" id="modal-novedades" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="novedades-titulo">
+      <div class="modal-header">
+        <h2 id="novedades-titulo">Tamaño Muestral se ha actualizado</h2>
+        <p class="modal-sub" id="novedades-sub">Esto es lo nuevo</p>
+      </div>
+      <div class="modal-body" id="novedades-body"></div>
+      <div class="modal-footer"><button class="btn btn--primary" id="btn-novedades-ok">Entendido</button></div>
     </div>
   </div>
 

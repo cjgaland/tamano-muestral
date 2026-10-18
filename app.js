@@ -7,6 +7,23 @@
   "use strict";
   const S = window.Stats;
 
+  // ---------- Versión y novedades ----------
+  // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en
+  // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
+  const APP_VERSION = "2026.02";
+  const NOVEDADES = [
+    { version: "2026.02", fecha: "Octubre 2026", titulo: "Mejor en el móvil", cambios: [
+      "La página ya no se sale por la derecha en pantallas pequeñas y las fórmulas se ajustan al ancho.",
+      "Curva característica operativa más legible: etiquetas sin solapes y tamaño adecuado en el ordenador.",
+      "Avisos (⚠) separados de las notas informativas (ℹ).",
+      "Dos medias: nota sobre por qué R (power.t.test) da uno o dos casos más.",
+      "Historial de versiones y aviso de «Nueva versión disponible»."] },
+    { version: "2026.01", fecha: "Octubre 2026", titulo: "Primera versión", cambios: [
+      "Cinco calculadoras: una proporción, una media, dos proporciones, dos medias y LQAS.",
+      "Guía «¿Qué calculadora necesito?», ayudas en cada parámetro, ejemplos, desarrollo paso a paso e informe imprimible.",
+      "LQAS con población conocida (hipergeométrica) y curva característica operativa."] }
+  ];
+
   // ---------- Utilidades de formato ----------
   const nf = (x, d = 2) => Number.isFinite(x) ? x.toLocaleString("es-ES", { maximumFractionDigits: d, minimumFractionDigits: 0 }) : "—";
   const nfix = (x, d) => Number.isFinite(x) ? x.toLocaleString("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d }) : "—";
@@ -567,9 +584,52 @@ ${lbl("lbl-u", xu, Y(paU), `pᵤ = ${nf(pU * 100, 1)} %`, `→ ${nf(paU * 100, 1
   ma.addEventListener("click", e => { if (e.target === ma) ma.hidden = true; });
   document.addEventListener("keydown", e => { if (e.key === "Escape") { ma.hidden = true; } });
 
+  // ---------- Versiones y novedades ----------
+  const KEY_VERSION = "tammuestral-version-vista";
+  const listaCambios = n => `<div class="version-item"><div class="version-cab"><b>${esc(n.titulo)}</b><span class="version-tag">v${esc(n.version)} · ${esc(n.fecha)}</span></div><ul>${n.cambios.map(c => `<li>${esc(c)}</li>`).join("")}</ul></div>`;
+  $("#historial-versiones").innerHTML = NOVEDADES.map(listaCambios).join("");
+  $("#about-version").textContent = $("#footer-version").textContent = `Versión ${APP_VERSION}`;
+  const mn = $("#modal-novedades");
+  $("#btn-novedades-ok").addEventListener("click", () => { mn.hidden = true; try { localStorage.setItem(KEY_VERSION, APP_VERSION); } catch (e) { /* */ } });
+  (function gestionarNovedades() {
+    let vistaV = null; try { vistaV = localStorage.getItem(KEY_VERSION); } catch (e) { return; }
+    if (vistaV === APP_VERSION) return;
+    // Usuario nuevo (nunca vio la bienvenida ni una versión): no se le enseñan novedades
+    if (!vistaV && !vista) { try { localStorage.setItem(KEY_VERSION, APP_VERSION); } catch (e) { /* */ } return; }
+    const idx = NOVEDADES.findIndex(n => n.version === vistaV);
+    const nuevas = idx > 0 ? NOVEDADES.slice(0, idx) : [NOVEDADES[0]];
+    $("#novedades-sub").textContent = nuevas.length > 1 ? "Esto es lo nuevo desde tu última visita" : "Gracias por mantener la app al día";
+    $("#novedades-body").innerHTML = nuevas.map(listaCambios).join("");
+    if (mb.hidden) mn.hidden = false;
+  })();
+
+  // ---------- Service worker y aviso de nueva versión ----------
+  function avisoActualizacion(reg) {
+    if ($("#update-banner")) return;
+    const b = document.createElement("div");
+    b.id = "update-banner"; b.className = "update-banner no-print"; b.setAttribute("role", "status");
+    b.innerHTML = "<span>Nueva versión disponible</span><button type=\"button\">Actualizar</button>";
+    b.querySelector("button").addEventListener("click", () => { if (reg.waiting) reg.waiting.postMessage({ type: "SKIP_WAITING" }); b.remove(); });
+    document.body.appendChild(b);
+  }
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    navigator.serviceWorker.register("sw.js").then(reg => {
+      // Una versión que ya esperaba de una visita anterior
+      if (reg.waiting && navigator.serviceWorker.controller) avisoActualizacion(reg);
+      reg.addEventListener("updatefound", () => {
+        const nw = reg.installing; if (!nw) return;
+        nw.addEventListener("statechange", () => {
+          // Solo si ya había una versión activa (no en la primera instalación)
+          if (nw.state === "installed" && navigator.serviceWorker.controller) avisoActualizacion(reg);
+        });
+      });
+    }).catch(() => {});
+    let recargando = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => { if (recargando) return; recargando = true; location.reload(); });
+  }
+
   // ---------- Arranque ----------
   buildNav();
   window.addEventListener("hashchange", route);
   route();
-  if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});
 })();

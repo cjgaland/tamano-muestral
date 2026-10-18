@@ -10,7 +10,7 @@ PWA estática (sin build, sin dependencias, sin CDN) de cálculo de tamaño mues
 - `styles.css` — tokens (claro por defecto; `html[data-tema="oscuro"]`), móvil primero (360 px), layout 2 columnas >= 900 px, bloque `@media print` para el informe.
 - `stats.js` — funciones PURAS (sin DOM). `window.Stats` en navegador y `module.exports` en Node.
 - `app.js` — definición declarativa de calculadoras (`CALCS`: campos, ayudas, ejemplo, `compute(v)` que devuelve resultado, avisos y pasos), render, eventos, enrutado por hash (`#/proporcion`, `#/media`, `#/dos-proporciones`, `#/dos-medias`, `#/lqas`), tema, modales. Todo cálculo se delega en `Stats`.
-- `sw.js` — network-first con caché de respaldo. Subir `CACHE_NAME` al cambiar archivos. Usa `skipWaiting` (sin banner de actualización).
+- `sw.js` — network-first con caché de respaldo. Subir `CACHE_NAME` al cambiar archivos. Aviso de actualización (ver §6).
 - `tests/stats.test.mjs` — `node tests/stats.test.mjs`.
 
 ## 3. Fórmulas
@@ -35,3 +35,15 @@ z = cuantil normal (Acklam + un paso de Halley, error < 1e-9; erfc propia). Siem
 
 ## 5. Entorno
 Node v26 (Homebrew). Si `node` fallara por una dylib de Homebrew (`libsimdjson`), ejecutar `brew upgrade node` o `brew reinstall node`. R 4.6.1 disponible (`Rscript`) para verificar cálculos.
+
+## 6. Versiones y actualización
+- `APP_VERSION` y `NOVEDADES` al principio de `app.js` (formato AAAA.NN, la más reciente arriba). Al publicar: nueva entrada al principio, actualizar `APP_VERSION` y subir `CACHE_NAME` en `sw.js`.
+- El historial completo se muestra en «Acerca de»; tras actualizar, un usuario que ya conocía la app ve el modal «se ha actualizado» con lo nuevo desde su última versión vista (`tammuestral-version-vista`).
+- `sw.js` ya NO hace `skipWaiting` al instalar: la versión nueva espera y la app muestra el aviso «Nueva versión disponible · Actualizar» (mensaje `SKIP_WAITING`, recarga en `controllerchange`). Mismo patrón que DosisPed.
+
+## 7. Copias de seguridad locales
+Sistema de respaldo local con rotación (carpeta `Backup/`, ignorada en git):
+- Cada copia es una carpeta `Backup/Copia_Seguridad_TamanoMuestral_DD_MM_YYYY-HH_MM` con el proyecto completo (rsync -a), excluyendo `Backup`, `.git`, dependencias/caché si existen y datos personales/secretos (`*.csv`, `.env*`).
+- Se conservan solo las **5 copias más recientes**; al crear una nueva se borra la más antigua.
+- Disparadores: "Haz una copia" / "Copia de seguridad", o antes de publicar.
+- Script: skill personal `app-copia_seguridad` (`bash ~/.claude/skills/app-copia_seguridad/scripts/copia_seguridad.sh --root "<carpeta>" --name TamanoMuestral`).
