@@ -99,4 +99,18 @@ t("EPOC (solucionario de la parte práctica): 68/93 = 73,1 %; media 69,7 %", () 
   close(r.comp, 0.7312, 1e-4); close(r.mean, 0.6972, 1e-4);
 });
 
+console.log("\n8. Tabla de consulta exacta (forma de Lemeshow: umbral 10–85 %, estándar 50–95 %)");
+for (const b of [0.20, 0.10]) t(`todas las casillas cumplen α ≤ 5 % y β ≤ ${b * 100} % de verdad`, () => {
+  let celdas = 0;
+  for (let L = 10; L <= 85; L += 5) for (let U = 50; U <= 95; U += 5) {
+    if (L >= U) continue;
+    const r = S.lqas({ pU: U / 100, pL: L / 100, alpha: b, beta: 0.05, N: 0 });
+    assert.ok(r.found, `${U}/${L}`);
+    const aReal = 1 - S.lqasPAccept(r.n, r.d, 0, U / 100), bReal = S.lqasPAccept(r.n, r.d, 0, L / 100);
+    assert.ok(aReal <= 0.05 + 1e-12 && bReal <= b + 1e-12, `${U}/${L}: α ${aReal}, β ${bReal}`);
+    celdas++;
+  }
+  assert.equal(celdas, 124);
+});
+
 console.log(`\n${ok} pruebas superadas.`);

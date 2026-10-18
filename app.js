@@ -10,8 +10,12 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.05";
+  const APP_VERSION = "2026.06";
   const NOVEDADES = [
+    { version: "2026.06", fecha: "Octubre 2026", titulo: "Tabla de consulta exacta para LQAS", cambios: [
+      "En LQAS, nueva «Tabla de consulta exacta»: la misma forma que las tablas de Lemeshow del curso (fila = umbral, columna = estándar, n / c), pero con planes que garantizan de verdad α = 5 % y β = 20 % o 10 %.",
+      "Toca una casilla y el plan se carga en la calculadora.",
+      "El campo N se llama ahora «Tamaño del lote (población)», y su ayuda explica por qué un lote grande apenas cambia el número de historias."] },
     { version: "2026.05", fecha: "Octubre 2026", titulo: "Publicación en la web", cambios: [
       "Disponible en https://cjgaland.github.io/tamano-muestral/ e instalable en el móvil como aplicación.",
       "Corregida una recarga inesperada de la página en la primera visita."] },
@@ -104,6 +108,42 @@
       return `<tr><td>${U} % / ${L} %</td><td>${b} %</td><td>${n} / ${c}</td><td><b>${nf(bReal * 100, 0)} %</b></td><td>${r.n} / ${r.d}</td></tr>`;
     }).join("");
     return `<div class="table-wrap"><table class="mini"><thead><tr><th>Estándar / umbral</th><th>β pedido</th><th>Tabla n / c</th><th>β real de la tabla</th><th>App n / c</th></tr></thead><tbody>${rows}</tbody></table></div><p class="step-note">Todas con α = 5 %. β real calculado de forma exacta (binomial).</p>`;
+  }
+
+  // Tabla de consulta exacta con la forma de las de Lemeshow (α 5 %, β 20 % o 10 %, binomial).
+  // Se calcula al abrirla (unos cientos de ms) y se guarda en memoria.
+  const tablaExactaCache = {};
+  const UMBRALES = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85], ESTANDARES = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95];
+  function tablaExactaHtml(b, selU, selL) {
+    if (!tablaExactaCache[b]) {
+      tablaExactaCache[b] = {};
+      UMBRALES.forEach(L => ESTANDARES.forEach(U => {
+        if (L >= U) return;
+        // Convención del curso: α (5 %) en el estándar → beta de Stats; β en el umbral → alpha de Stats
+        const r = S.lqas({ pU: U / 100, pL: L / 100, alpha: b / 100, beta: 0.05, N: 0 });
+        tablaExactaCache[b][L + "-" + U] = r.found ? [r.n, r.d] : null;
+      }));
+    }
+    const T = tablaExactaCache[b];
+    const head = `<tr><th class="te-esq">Umbral ↓ / Estándar →</th>${ESTANDARES.map(U => `<th>${U} %</th>`).join("")}</tr>`;
+    const body = UMBRALES.map(L => `<tr><th>${L} %</th>${ESTANDARES.map(U => {
+      if (L >= U) return `<td class="te-vacia">—</td>`;
+      const v = T[L + "-" + U];
+      if (!v) return `<td class="te-vacia">&gt; 1000</td>`;
+      const sel = U === selU && L === selL ? " te-sel" : "";
+      return `<td class="${sel.trim()}"><button type="button" class="te-celda" data-act="tabla-celda" data-u="${U}" data-l="${L}" data-b="${b}" aria-label="Estándar ${U} %, umbral ${L} %: revisar ${v[0]}, c = ${v[1]}">${v[0]} / ${v[1]}</button></td>`;
+    }).join("")}</tr>`).join("");
+    return `<div class="table-wrap"><table class="mini tabla-te"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  }
+  let tablaBeta = 20;
+  function pintarTablaExacta() {
+    const out = $("#tabla-exacta-out"); if (!out || !current || current.id !== "lqas") return;
+    $$("[data-act='tabla-beta']").forEach(x => x.classList.toggle("active", Number(x.dataset.b) === tablaBeta));
+    const st = state.lqas, U = parseNum(st.pU), L = parseNum(st.pL);
+    const marcar = parseNum(st.alpha) === 5 && parseNum(st.beta) === tablaBeta;
+    const pinta = () => { out.innerHTML = tablaExactaHtml(tablaBeta, marcar ? U : null, marcar ? L : null); };
+    if (tablaExactaCache[tablaBeta]) pinta();
+    else { out.innerHTML = `<p class="step-note">Calculando…</p>`; setTimeout(pinta, 30); }
   }
 
   // ---------- Definición de calculadoras ----------
@@ -432,11 +472,19 @@
           help: "Probabilidad de que salga ROJO un servicio que en realidad cumple el estándar: suena el detector y no hay fuego. Hace perder tiempo investigando algo que no falla. Lo habitual: 5 %." },
         { id: "beta", label: "Error β · fuego sin alarma", unit: "%", def: "20", quick: [10, 20],
           help: "Probabilidad de que salga VERDE un servicio que en realidad está en el umbral o peor: hay fuego y no suena la alarma. Deja pasar un problema real. Lo habitual: 20 %, o 10 % si quieres más seguridad (a cambio de más casos)." },
-        { id: "N", label: "Tamaño del lote N", unit: "casos", opt: true, def: "", ph: "opcional",
-          help: "Número total de casos del lote (la «caja de galletas»): por ejemplo, las historias del periodo. Si lo conoces, se usa la distribución HIPERGEOMÉTRICA (muestreo sin reposición) y suelen hacer falta menos casos, sobre todo si el lote es pequeño. Si no lo conoces, se usa la BINOMIAL." },
+        { id: "N", label: "Tamaño del lote (población) N", unit: "casos", opt: true, def: "", ph: "opcional",
+          help: "Número total de casos del lote (la «caja de galletas», es decir, la población que quieres juzgar): por ejemplo, todas las historias del periodo. No es la muestra: la muestra (n) es lo que calcula la app. Si conoces N, se usa la distribución HIPERGEOMÉTRICA y, si el lote es pequeño (unos cientos de casos o menos), hacen falta menos historias. Si el lote es grande, N apenas cambia el resultado (como la cucharada de sopa: sirve igual para una olla que para un caldero) y puedes dejarlo vacío." },
         F_LOSS
       ],
       example: { pU: "85", pL: "60", alpha: "5", beta: "20", N: "", loss: "0" },
+      pageHtml() {
+        return `<details class="facil tabla-exacta no-print" id="tabla-exacta"><summary>Tabla de consulta exacta (como las de Lemeshow)</summary><div class="facil-body">
+          <p>Misma forma que las tablas de Lemeshow del curso: <b>fila = umbral</b>, <b>columna = estándar</b>, y en cada casilla <b>n / c</b> (historias a revisar / mínimo de cumplimientos para que salga verde). La diferencia es que aquí cada plan está calculado de forma <b>exacta</b> (distribución binomial), así que garantiza de verdad α = 5 % y el β elegido.</p>
+          <div class="seg seg--tabla" role="group" aria-label="Error β de la tabla"><button type="button" data-act="tabla-beta" data-b="20">α 5 % · β 20 % (como la A1)</button><button type="button" data-act="tabla-beta" data-b="10">α 5 % · β 10 % (como la A2)</button></div>
+          <div id="tabla-exacta-out" class="tabla-exacta-out"><p class="step-note">Calculando…</p></div>
+          <p class="step-note">Toca una casilla para llevar ese plan a la calculadora de arriba (con tu N, si lo has escrito). La tabla supone un lote grande o de tamaño desconocido; si el lote es pequeño, escribe N arriba y la app te dará un plan con menos historias. Una raya (—) indica que el umbral no es menor que el estándar.</p>
+        </div></details>`;
+      },
       exampleText: "Ejemplo (tema 4 del curso): vigilar el registro del dolor en el triaje de Urgencias. Estándar 85 %, umbral 60 %, α = 5 % (falsa alarma) y β = 20 % (fuego sin alarma).",
       compute(v) {
         const E = [];
@@ -678,6 +726,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
 
   const KEY_FACIL = "tammuestral-facil-abierto";
   function facilAbierto() { try { return localStorage.getItem(KEY_FACIL) === "1"; } catch (e) { return false; } }
+  view.addEventListener("toggle", e => { if (e.target.id === "tabla-exacta" && e.target.open) pintarTablaExacta(); }, true);
   view.addEventListener("toggle", e => { if (e.target.matches && e.target.matches("details.facil")) { try { localStorage.setItem(KEY_FACIL, e.target.open ? "1" : "0"); } catch (er) { /* */ } } }, true);
 
   function renderCalc(c) {
@@ -702,6 +751,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
         </section>
         <section class="calc-result-col" id="res" aria-live="polite" aria-label="Resultado"></section>
       </div>
+      ${c.pageHtml ? c.pageHtml() : ""}
       <div class="print-only print-foot">Aplicación desarrollada por Carlos J. Galán Doval · Médico de Familia · Técnico en Calidad y Seguridad del Paciente · Hospital de Montilla · Córdoba · Andalucía. De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.</div>`;
     syncInputs(); update();
   }
@@ -760,6 +810,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       ${c.custom ? "" : paramsTable(c)}
       <div class="toolbar no-print"><button class="btn" data-act="imprimir">Imprimir / Guardar PDF</button></div>`;
     mini.textContent = res.mini;
+    const te = $("#tabla-exacta"); if (te && te.open && tablaExactaCache[tablaBeta]) pintarTablaExacta();
   }
 
   function renderHome() {
@@ -861,6 +912,13 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
     if ((b = t.closest("[data-seg] button"))) { state[current.id][b.parentNode.dataset.seg] = b.dataset.v; syncInputs(); update(); return; }
     if ((b = t.closest("[data-act]"))) {
       const a = b.dataset.act;
+      if (a === "tabla-beta") { tablaBeta = Number(b.dataset.b); pintarTablaExacta(); return; }
+      if (a === "tabla-celda") {
+        Object.assign(state.lqas, { pU: b.dataset.u, pL: b.dataset.l, alpha: "5", beta: b.dataset.b });
+        syncInputs(); update(); pintarTablaExacta();
+        $("#res").scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
       if (a === "cmp-add" || a === "cmp-del") {
         const st = state[current.id];
         if (a === "cmp-add") st.rows.push({ nom: "", cum: "", opo: "" }); else st.rows.splice(Number(b.dataset.row), 1);
