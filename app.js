@@ -10,8 +10,11 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.04";
+  const APP_VERSION = "2026.05";
   const NOVEDADES = [
+    { version: "2026.05", fecha: "Octubre 2026", titulo: "Publicación en la web", cambios: [
+      "Disponible en https://cjgaland.github.io/tamano-muestral/ e instalable en el móvil como aplicación.",
+      "Corregida una recarga inesperada de la página en la primera visita."] },
     { version: "2026.04", fecha: "Octubre 2026", titulo: "Indicador compuesto y «Ponte a prueba»", cambios: [
       "Nueva calculadora: indicador compuesto de porcentaje simple (Σ cumplimientos ÷ Σ oportunidades), con desglose por criterio y avisos cuando el titular esconde una mala noticia.",
       "En el inicio: los siete tipos de indicadores, qué hace bueno a un indicador y cuatro preguntas para ponerte a prueba.",
@@ -932,12 +935,15 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
   })();
 
   // ---------- Service worker y aviso de nueva versión ----------
+  // Solo se recarga cuando el usuario pulsa «Actualizar»: en la primera instalación el SW
+  // también toma el control (clients.claim) y no debe provocar una recarga inesperada.
+  let actualizando = false;
   function avisoActualizacion(reg) {
     if ($("#update-banner")) return;
     const b = document.createElement("div");
     b.id = "update-banner"; b.className = "update-banner no-print"; b.setAttribute("role", "status");
     b.innerHTML = "<span>Nueva versión disponible</span><button type=\"button\">Actualizar</button>";
-    b.querySelector("button").addEventListener("click", () => { if (reg.waiting) reg.waiting.postMessage({ type: "SKIP_WAITING" }); b.remove(); });
+    b.querySelector("button").addEventListener("click", () => { actualizando = true; if (reg.waiting) reg.waiting.postMessage({ type: "SKIP_WAITING" }); b.remove(); });
     document.body.appendChild(b);
   }
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
@@ -953,7 +959,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       });
     }).catch(() => {});
     let recargando = false;
-    navigator.serviceWorker.addEventListener("controllerchange", () => { if (recargando) return; recargando = true; location.reload(); });
+    navigator.serviceWorker.addEventListener("controllerchange", () => { if (recargando || !actualizando) return; recargando = true; location.reload(); });
   }
 
   // ---------- Arranque ----------
