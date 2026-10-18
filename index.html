@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0d1b2a" id="meta-theme-color" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Tamaño Muestral" />
+  <meta name="description" content="Calculadoras de tamaño muestral para auditorías y estudios en calidad asistencial: proporciones, medias, comparación de grupos y LQAS" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=1" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png?v=1" />
+  <link rel="apple-touch-icon" href="icon-180.png?v=1" />
+  <title>Tamaño Muestral · Calidad asistencial</title>
+  <script>
+    // Tema antes del primer pintado (evita parpadeo): preferencia guardada o del sistema
+    (function () {
+      var t = null; try { t = localStorage.getItem("tammuestral-tema"); } catch (e) {}
+      if (!t) t = (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "oscuro" : "claro";
+      document.documentElement.setAttribute("data-tema", t);
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="app-header">
+    <a class="header-brand" href="#/" aria-label="Inicio">
+      <span class="header-logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 19c3 0 4-14 10-14s7 14 10 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="13" r="1.6" fill="currentColor"/><circle cx="8.5" cy="16" r="1.4" fill="currentColor"/><circle cx="15.5" cy="16" r="1.4" fill="currentColor"/></svg>
+      </span>
+      <span>
+        <span class="header-title">Tamaño Muestral</span>
+        <span class="header-subtitle">Calidad y seguridad del paciente</span>
+      </span>
+    </a>
+    <div class="header-actions">
+      <button class="icon-btn" id="btn-tema" aria-label="Cambiar entre modo claro y oscuro" title="Modo claro / oscuro">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-acerca" aria-label="Acerca de" title="Acerca de">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 11v6M12 7.5v.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <nav class="calc-nav" id="calc-nav" aria-label="Calculadoras"></nav>
+
+  <main id="view" class="view" tabindex="-1"></main>
+
+  <footer class="app-footer">
+    Aplicación desarrollada por Carlos J. Galán Doval · Médico de Familia · Técnico en Calidad y Seguridad del Paciente · Hospital de Montilla · Córdoba · Andalucía.
+    De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.
+  </footer>
+
+  <!-- MODAL BIENVENIDA -->
+  <div class="modal-overlay" id="modal-bienvenida" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="bienv-titulo">
+      <div class="modal-header">
+        <h2 id="bienv-titulo">Bienvenido a Tamaño Muestral</h2>
+        <p class="modal-sub">Calculadoras para auditorías y estudios en calidad asistencial</p>
+      </div>
+      <div class="modal-body">
+        <div class="modal-bloque modal-bloque--aviso">
+          <strong>Aviso importante</strong>
+          <p>Esta es una <b>herramienta docente y de apoyo</b>. Los resultados dependen de los supuestos que introduzcas y <b>no sustituyen el criterio profesional</b> ni el asesoramiento de un estadístico cuando el diseño sea complejo (muestreo por conglomerados, estratificado, datos apareados, etc.).</p>
+        </div>
+        <div class="modal-bloque">
+          <strong>Cómo se usa</strong>
+          <p>Elige la calculadora en la pantalla de inicio, rellena los parámetros (cada ⓘ explica qué significan) o pulsa <b>Cargar ejemplo</b>. El resultado se calcula al instante y se muestra el desarrollo paso a paso. Funciona sin conexión y puedes imprimir un informe.</p>
+        </div>
+        <label class="modal-check"><input type="checkbox" id="modal-no-repetir" /> <span>No mostrar este mensaje al iniciar</span></label>
+      </div>
+      <div class="modal-footer"><button class="btn btn--primary" id="btn-bienv-ok">He leído y entiendo</button></div>
+    </div>
+  </div>
+
+  <!-- MODAL ACERCA DE -->
+  <div class="modal-overlay" id="modal-acerca" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="acerca-titulo">
+      <div class="modal-header">
+        <h2 id="acerca-titulo">Acerca de Tamaño Muestral</h2>
+        <button class="icon-btn modal-close" id="btn-acerca-cerrar" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Aplicación web (PWA) estática, sin dependencias externas y utilizable sin conexión, para calcular el tamaño de muestra necesario en estudios y auditorías de calidad asistencial.</p>
+        <div class="modal-bloque">
+          <strong>Fórmulas y referencias</strong>
+          <ul>
+            <li>Una proporción / una media: fórmula con z bilateral y corrección por población finita (Cochran, <i>Sampling Techniques</i>).</li>
+            <li>Dos proporciones: Fleiss, Levin y Paik, <i>Statistical Methods for Rates and Proportions</i>, con corrección de continuidad opcional.</li>
+            <li>Dos medias: fórmula clásica de comparación de medias con varianza común (Rosner, <i>Fundamentals of Biostatistics</i>).</li>
+            <li>LQAS: Lemeshow y Taber, <i>World Health Stat Q</i> 1991; Robertson y Valadez, <i>Soc Sci Med</i> 2006. Distribución binomial (N desconocido) o hipergeométrica (N conocido).</li>
+            <li>z: inversa de la normal estándar (algoritmo de Acklam con refinamiento, precisión mejor que 1e-9).</li>
+          </ul>
+        </div>
+        <div class="modal-bloque modal-bloque--aviso">
+          <strong>Limitaciones</strong>
+          <p>Se asume muestreo aleatorio simple. Si el muestreo es por conglomerados o estratificado, multiplica por el efecto de diseño o consulta a un estadístico.</p>
+        </div>
+        <p class="about-credit"><b>Aplicación desarrollada por Carlos J. Galán Doval</b> · Médico de Familia · Técnico en Calidad y Seguridad del Paciente · Hospital de Montilla · Córdoba · Andalucía. De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="stats.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

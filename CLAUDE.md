@@ -1,0 +1,31 @@
+# CLAUDE.md — Tamaño Muestral
+
+Guía de referencia para el desarrollo asistido por IA. Léela antes de proponer cambios.
+
+## 1. Descripción
+PWA estática (sin build, sin dependencias, sin CDN) de cálculo de tamaño muestral para calidad y seguridad del paciente. Herramienta docente y de apoyo; no sustituye el criterio profesional. Autor: Carlos J. Galán Doval (Hospital de Montilla, Córdoba). Hermana de DosisPed (mismos tokens CSS, modal de bienvenida, Acerca de, SW network-first, iconos).
+
+## 2. Arquitectura
+- `index.html` — esqueleto, header, nav, modales (bienvenida y Acerca de). Script inline en `<head>` que fija `data-tema` (claro/oscuro) antes de pintar.
+- `styles.css` — tokens (claro por defecto; `html[data-tema="oscuro"]`), móvil primero (360 px), layout 2 columnas >= 900 px, bloque `@media print` para el informe.
+- `stats.js` — funciones PURAS (sin DOM). `window.Stats` en navegador y `module.exports` en Node.
+- `app.js` — definición declarativa de calculadoras (`CALCS`: campos, ayudas, ejemplo, `compute(v)` que devuelve resultado, avisos y pasos), render, eventos, enrutado por hash (`#/proporcion`, `#/media`, `#/dos-proporciones`, `#/dos-medias`, `#/lqas`), tema, modales. Todo cálculo se delega en `Stats`.
+- `sw.js` — network-first con caché de respaldo. Subir `CACHE_NAME` al cambiar archivos. Usa `skipWaiting` (sin banner de actualización).
+- `tests/stats.test.mjs` — `node tests/stats.test.mjs`.
+
+## 3. Fórmulas
+z = cuantil normal (Acklam + un paso de Halley, error < 1e-9; erfc propia). Siempre `ceil` (con tolerancia 1e-9 al ruido de coma flotante). Pérdidas: n_final = ceil(n/(1−L)).
+1. Proporción: n0 = z²p(1−p)/e², z bilateral; con N: n = n0/(1+(n0−1)/N). (Cochran)
+2. Media: n0 = z²σ²/e²; misma corrección finita.
+3. Dos proporciones (Fleiss, Levin y Paik): p̄=(p1+k p2)/(1+k); n1=[zα√((1+1/k)p̄q̄)+zβ√(p1q1+p2q2/k)]²/(p1−p2)²; n2=k·n1. Corrección de continuidad opcional: n1'=(n1/4)(1+√(1+2(k+1)/(k n1 |p1−p2|)))².
+4. Dos medias: n1=(1+1/k)σ²(zα+zβ)²/Δ²; n2=k·n1.
+5. LQAS (Lemeshow y Taber 1991; Robertson y Valadez 2006): menor n (1..min(N,1000)) con algún d tal que P(X≥d|pL)≤α y P(X<d|pU)≤β; entre varios d, el que minimiza max(α real, β real). X~Binomial(n,p), o Hipergeométrica(N,K=round(pN),n) si N conocido. pmf con log-gamma (Lanczos g=7). Curva OC = P(X≥d|p).
+
+## 4. Decisiones
+- Los porcentajes se introducen en % y se convierten a proporciones en `compute`; los textos de desarrollo muestran las proporciones sustituidas.
+- LQAS con N: la regla (d) se aplica a n casos evaluables; las pérdidas solo aumentan los casos a seleccionar (limitado a N). Con N conocido se avisa de la n binomial equivalente. Si K_L = K_U tras redondear, se pide separar umbrales.
+- Un censo (n = N) siempre es una solución válida con N conocido, por lo que LQAS hipergeométrico siempre encuentra solución si K_L < K_U.
+- Supone muestreo aleatorio simple (se avisa en Acerca de).
+
+## 5. Entorno
+En este Mac `node` puede fallar por una dylib de Homebrew (`libsimdjson.33`); si ocurre: `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/Cellar/simdjson/4.6.3/lib node tests/stats.test.mjs` o `brew reinstall node`.
