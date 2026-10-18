@@ -28,4 +28,4 @@ z = cuantil normal (Acklam + un paso de Halley, error < 1e-9; erfc propia). Siem
 - Supone muestreo aleatorio simple (se avisa en Acerca de).
 
 ## 5. Entorno
-En este Mac `node` puede fallar por una dylib de Homebrew (`libsimdjson.33`); si ocurre: `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/Cellar/simdjson/4.6.3/lib node tests/stats.test.mjs` o `brew reinstall node`.
+Node v26 (Homebrew). Si `node` fallara por una dylib de Homebrew (`libsimdjson`), ejecutar `brew upgrade node` o `brew reinstall node`. R 4.6.1 disponible (`Rscript`) para verificar cálculos.
