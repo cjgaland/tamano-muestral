@@ -10,10 +10,12 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.09";
+  const APP_VERSION = "2026.10";
   const NOVEDADES = [
+    { version: "2026.10", fecha: "Octubre 2026", titulo: "Ajuste en la autoría", cambios: [
+      "La autoría muestra solo el área común (Área de Gestión Sanitaria Sur de Córdoba), sin centro de trabajo. Los autores aparecen por orden alfabético."] },
     { version: "2026.09", fecha: "Octubre 2026", titulo: "Autoría", cambios: [
-      "Autoría completa en el pie, en «Acerca de» y en el informe: Carlos J. Galán Doval (Médico de Familia, Técnico en Calidad y Seguridad del Paciente, Hospital de Montilla) y Rafael J. Romero de Castilla Gil (Médico de Familia, Responsable del Área de Calidad y Seguridad del Paciente), del Área de Gestión Sanitaria Sur de Córdoba."] },
+      "Autoría completa en el pie, en «Acerca de» y en el informe: Carlos J. Galán Doval (Médico de Familia, Técnico en Calidad y Seguridad del Paciente) y Rafael J. Romero de Castilla Gil (Médico de Familia, Responsable del Área de Calidad y Seguridad del Paciente), del Área de Gestión Sanitaria Sur de Córdoba."] },
     { version: "2026.08", fecha: "Octubre 2026", titulo: "Ver informe y guardar en el iPhone", cambios: [
       "Nuevo botón «Ver informe»: muestra en pantalla el informe tal y como saldrá impreso.",
       "«Guardar / imprimir» funciona ahora en el iPhone y el iPad: crea un PDF y abre el menú Compartir (Imprimir, Guardar en Archivos, Mail, WhatsApp…).",
@@ -762,7 +764,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
         <section class="calc-result-col" id="res" aria-live="polite" aria-label="Resultado"></section>
       </div>
       ${c.pageHtml ? c.pageHtml() : ""}
-      <div class="print-only print-foot"><span class="autor-titulo">Aplicación desarrollada por</span><span class="autor"><b>Carlos J. Galán Doval</b> · Médico de Familia · Técnico en Calidad y Seguridad del Paciente · Hospital de Montilla</span><span class="autor"><b>Rafael J. Romero de Castilla Gil</b> · Médico de Familia · Responsable del Área de Calidad y Seguridad del Paciente</span><span class="autor-area">Área de Gestión Sanitaria Sur de Córdoba · Andalucía</span><span class="autor-uso">De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.</span></div>`;
+      <div class="print-only print-foot"><span class="autor-titulo">Aplicación desarrollada por</span><span class="autor"><b>Carlos J. Galán Doval</b> · Médico de Familia · Técnico en Calidad y Seguridad del Paciente</span><span class="autor"><b>Rafael J. Romero de Castilla Gil</b> · Médico de Familia · Responsable del Área de Calidad y Seguridad del Paciente</span><span class="autor-area">Área de Gestión Sanitaria Sur de Córdoba · Andalucía</span><span class="autor-uso">De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.</span></div>`;
     syncInputs(); update();
   }
 

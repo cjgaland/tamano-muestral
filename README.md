@@ -19,7 +19,7 @@ Documentación técnica y fórmulas: ver `CLAUDE.md`.
 
 Aplicación desarrollada por:
 
-- **Carlos J. Galán Doval** · Médico de Familia · Técnico en Calidad y Seguridad del Paciente · Hospital de Montilla
+- **Carlos J. Galán Doval** · Médico de Familia · Técnico en Calidad y Seguridad del Paciente
 - **Rafael J. Romero de Castilla Gil** · Médico de Familia · Responsable del Área de Calidad y Seguridad del Paciente
 
 Área de Gestión Sanitaria Sur de Córdoba · Andalucía. De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.
