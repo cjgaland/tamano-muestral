@@ -17,4 +17,4 @@ Tests de las funciones estadísticas:
 
 Documentación técnica y fórmulas: ver `CLAUDE.md`.
 
-Aplicación desarrollada por Carlos J. Galán Doval · Médico de Familia · Técnico en Calidad y Seguridad del Paciente · Hospital de Montilla · Córdoba · Andalucía. De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.
+Aplicación desarrollada por Carlos J. Galán Doval · Médico de Familia · Técnico en Calidad y Seguridad del Paciente · Hospital de Montilla, y Rafael J. Romero de Castilla Gil · Médico de Familia · Córdoba · Andalucía. De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.

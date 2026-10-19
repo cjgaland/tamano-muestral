@@ -3,7 +3,7 @@
 Guía de referencia para el desarrollo asistido por IA. Léela antes de proponer cambios.
 
 ## 1. Descripción
-PWA estática (sin build, sin dependencias, sin CDN) de cálculo de tamaño muestral para calidad y seguridad del paciente. Herramienta docente y de apoyo; no sustituye el criterio profesional. Autor: Carlos J. Galán Doval (Hospital de Montilla, Córdoba). Hermana de DosisPed (mismos tokens CSS, modal de bienvenida, Acerca de, SW network-first, iconos).
+PWA estática (sin build, sin dependencias, sin CDN) de cálculo de tamaño muestral para calidad y seguridad del paciente. Herramienta docente y de apoyo; no sustituye el criterio profesional. Autores: Carlos J. Galán Doval (Médico de Familia, Técnico en Calidad y Seguridad del Paciente, Hospital de Montilla) y Rafael J. Romero de Castilla Gil (Médico de Familia; autor de la unidad temática de muestreo, LQAS e indicadores en la que se basa el contenido didáctico). La autoría aparece igual en el pie, el informe impreso, «Acerca de» y el README. Hermana de DosisPed (mismos tokens CSS, modal de bienvenida, Acerca de, SW network-first, iconos).
 
 ## 2. Arquitectura
 - `index.html` — esqueleto, header, nav, modales (bienvenida y Acerca de). Script inline en `<head>` que fija `data-tema` (claro/oscuro) antes de pintar.

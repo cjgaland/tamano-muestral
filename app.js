@@ -10,8 +10,10 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.06";
+  const APP_VERSION = "2026.07";
   const NOVEDADES = [
+    { version: "2026.07", fecha: "Octubre 2026", titulo: "Coautoría", cambios: [
+      "Rafael J. Romero de Castilla Gil, Médico de Familia, figura como coautor de la aplicación."] },
     { version: "2026.06", fecha: "Octubre 2026", titulo: "Tabla de consulta exacta para LQAS", cambios: [
       "En LQAS, nueva «Tabla de consulta exacta»: la misma forma que las tablas de Lemeshow del curso (fila = umbral, columna = estándar, n / c), pero con planes que garantizan de verdad α = 5 % y β = 20 % o 10 %.",
       "Toca una casilla y el plan se carga en la calculadora.",
@@ -752,7 +754,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
         <section class="calc-result-col" id="res" aria-live="polite" aria-label="Resultado"></section>
       </div>
       ${c.pageHtml ? c.pageHtml() : ""}
-      <div class="print-only print-foot">Aplicación desarrollada por Carlos J. Galán Doval · Médico de Familia · Técnico en Calidad y Seguridad del Paciente · Hospital de Montilla · Córdoba · Andalucía. De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.</div>`;
+      <div class="print-only print-foot">Aplicación desarrollada por Carlos J. Galán Doval · Médico de Familia · Técnico en Calidad y Seguridad del Paciente · Hospital de Montilla, y Rafael J. Romero de Castilla Gil · Médico de Familia · Córdoba · Andalucía. De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.</div>`;
     syncInputs(); update();
   }
 
