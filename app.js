@@ -10,8 +10,10 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.12";
+  const APP_VERSION = "2026.13";
   const NOVEDADES = [
+    { version: "2026.13", fecha: "Octubre 2026", titulo: "Enlace a la app Indicadores", cambios: [
+      "Nuevo acceso a la app hermana «Indicadores» (en la portada y en «Acerca de»): para crear, definir y comprobar indicadores de calidad paso a paso. Desde ella se abre esta app con los datos del indicador ya puestos."] },
     { version: "2026.12", fecha: "Octubre 2026", titulo: "Glosario, conglomerados y RR/OR", cambios: [
       "Glosario con 50 términos explicados en lenguaje llano, con buscador y enlaces a cada calculadora (en el menú y en la portada).",
       "Nueva calculadora de muestreo por conglomerados: cuánta muestra más hace falta al sortear plantas o centros y revisar varias historias en cada uno (efecto de diseño), y cuántos sortear.",
@@ -1183,6 +1185,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       </div>
       <div class="guide">${CALCS.map((c, i) => `<a class="guide-card" href="#/${c.id}"><span class="guide-num">${i + 1}</span><span><div class="guide-q">${esc(c.q)}</div><div class="guide-a">→ ${c.a}</div></span><span class="guide-go">›</span></a>`).join("")}</div>
       <a class="glos-portada" href="#/glosario"><span><b>Glosario</b> · ${GLOSARIO.length} términos explicados en lenguaje llano, con buscador</span><span class="guide-go">›</span></a>
+      <a class="glos-portada" href="https://cjgaland.github.io/indicadores-calidad/" target="_blank" rel="noopener"><span><b>Indicadores ↗</b> · la app hermana: crea, define y comprueba tus indicadores de calidad paso a paso, y vuelve aquí para calcular la muestra</span><span class="guide-go">›</span></a>
       <div class="glossary"><details class="gloss"><summary>Conceptos clave en 1 minuto</summary><dl class="gloss-body">
         <dt>Confianza (1 − α)</dt><dd>Seguridad con que el intervalo contiene el valor real. 95 % es lo habitual.</dd>
         <dt>Precisión (e)</dt><dd>Mitad de la anchura del intervalo: el «±» que toleras.</dd>
