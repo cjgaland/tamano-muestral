@@ -238,9 +238,48 @@
     return { sc, so, comp: sc / so, mean: rows.reduce((a, r) => a + r.c / r.o, 0) / rows.length, weights: rows.map(r => r.o / so) };
   }
 
+  // Intervalo de confianza de Wilson para una proporción (x de n), sin corrección de continuidad.
+  // Más fiable que el de Wald (p ± z·√(p(1−p)/n)) con muestras pequeñas o proporciones extremas.
+  function wilson(x, n, conf) {
+    const z = normInv(1 - (1 - conf) / 2), p = x / n, z2 = z * z, den = 1 + z2 / n;
+    const centro = (p + z2 / (2 * n)) / den, semi = z * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n)) / den;
+    return { p, lo: x === 0 ? 0 : Math.max(0, centro - semi), hi: x === n ? 1 : Math.min(1, centro + semi), z };
+  }
+
+  // Kappa de Cohen para dos observadores y dos categorías (tabla 2×2).
+  // a = ambos «cumple»; b = A cumple y B no; c = A no y B cumple; d = ambos «no cumple».
+  // ee = error estándar aproximado de muestra grande (Cohen): √(po(1−po) / (n(1−pe)²)).
+  // PABAK = kappa ajustado por prevalencia y sesgo = 2·po − 1.
+  function kappa(a, b, c, d, conf) {
+    const n = a + b + c + d, po = (a + d) / n;
+    const pA = (a + b) / n, pB = (a + c) / n, pe = pA * pB + (1 - pA) * (1 - pB);
+    const k = pe < 1 ? (po - pe) / (1 - pe) : NaN;
+    const ee = pe < 1 ? Math.sqrt(po * (1 - po) / (n * (1 - pe) * (1 - pe))) : NaN;
+    const z = normInv(1 - (1 - (conf || 0.95)) / 2);
+    return { n, po, pe, k, ee, lo: Math.max(-1, k - z * ee), hi: Math.min(1, k + z * ee), pabak: 2 * po - 1, pA, pB };
+  }
+
+  // Reparto de n entre estratos de tamaños Ns. modo "prop" (proporcional al tamaño) o "igual".
+  // Redondeo por restos mayores para que la suma sea exactamente n, sin superar el tamaño de ningún estrato.
+  function allocate(n, Ns, modo) {
+    const N = Ns.reduce((x, y) => x + y, 0);
+    n = Math.min(n, N);
+    const ideal = Ns.map(Nh => modo === "igual" ? n / Ns.length : n * Nh / N);
+    const out = ideal.map((v, i) => Math.min(Math.floor(v + 1e-9), Ns[i]));
+    let falta = n - out.reduce((x, y) => x + y, 0);
+    while (falta > 0) {
+      // siguiente estrato con mayor resto que todavía tenga casos disponibles
+      let best = -1, br = -Infinity;
+      ideal.forEach((v, i) => { const r = v - out[i]; if (out[i] < Ns[i] && r > br) { br = r; best = i; } });
+      if (best < 0) break;
+      out[best]++; falta--;
+    }
+    return out;
+  }
+
   const api = { ceilN, erfc, normCdf, normInv, zAlpha, lgamma, logChoose, binomPmf, hyperPmf, binomCdf, hyperCdf,
     finiteCorrection, withLoss, sampleProportion, sampleMean, twoProportions, twoMeans,
-    lqas, lqasBestRule, lqasOC, lqasPAccept, composite };
+    lqas, lqasBestRule, lqasOC, lqasPAccept, composite, wilson, kappa, allocate };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.Stats = api;
 })(typeof window !== "undefined" ? window : globalThis);

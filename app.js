@@ -10,8 +10,15 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.10";
+  const APP_VERSION = "2026.11";
   const NOVEDADES = [
+    { version: "2026.11", fecha: "Octubre 2026", titulo: "Analizar resultados, kappa y estratos", cambios: [
+      "«Ya tengo los resultados»: en LQAS escribe cuántas historias cumplen y la app te da el semáforo verde o rojo, la frase para el informe y lo que no debes escribir. Si los resultados ya deciden antes de terminar, te avisa de que puedes parar.",
+      "En «Un porcentaje», el resultado con su horquilla de error (método de Wilson) y, si quieres, la comparación con un estándar.",
+      "Nueva calculadora de concordancia entre auditores (kappa de Cohen) para pilotar indicadores, con la paradoja del kappa explicada.",
+      "Nueva calculadora para repartir la muestra por estratos (turnos, unidades…) y sortear los casos dentro de cada uno.",
+      "«Compartir enlace»: crea un enlace que abre la calculadora con los mismos datos (ideal para enviar ejercicios a los alumnos).",
+      "Instrucciones para instalar la app en el móvil o el ordenador, en «Acerca de»."] },
     { version: "2026.10", fecha: "Octubre 2026", titulo: "Ajuste en la autoría", cambios: [
       "La autoría muestra solo el área común (Área de Gestión Sanitaria Sur de Córdoba), sin centro de trabajo. Los autores aparecen por orden alfabético."] },
     { version: "2026.09", fecha: "Octubre 2026", titulo: "Autoría", cambios: [
@@ -156,6 +163,93 @@
     else { out.innerHTML = `<p class="step-note">Calculando…</p>`; setTimeout(pinta, 30); }
   }
 
+  // ---------- «Ya tengo los resultados»: analizar la muestra ya revisada ----------
+  // Cada calculadora con `analisis` declara sus campos y una función que devuelve el HTML del análisis
+  // a partir del estado y del último resultado calculado (`c.ultimo`, con el plan n, c…).
+  function analisisHtml(c) {
+    const st = state[c.id], A = c.analisis;
+    return `<section class="card analisis" id="analisis" aria-label="Analizar los resultados de la auditoría">
+      <h2 class="an-titulo">Ya tengo los resultados</h2>
+      <p class="an-intro no-print">${A.intro}</p>
+      <div class="an-campos no-print">${A.campos.map(f => `<label class="an-campo"><span>${f.l}</span><input class="an-in" data-k="${f.k}" type="text" inputmode="numeric" autocomplete="off" placeholder="${esc(f.ph || "")}" value="${esc(st["an_" + f.k] || "")}" /></label>`).join("")}</div>
+      <div id="analisis-out" aria-live="polite"></div></section>`;
+  }
+  function pintarAnalisis() {
+    const c = current, out = $("#analisis-out"); if (!c || !c.analisis || !out) return;
+    const st = state[c.id], r = c.analisis.calcula(st, c.ultimo);
+    out.innerHTML = r.html;
+    $("#analisis").classList.toggle("an-vacio", !r.lleno);
+    (c.analisis.campos || []).forEach(f => { if (f.phDe) { const i = $(`.an-in[data-k="${f.k}"]`); if (i) i.placeholder = f.phDe(c.ultimo); } });
+  }
+  const anNum = s => { const x = parseNum(s); return x === null ? null : x; };
+  const anEntero = x => x !== null && Number.isInteger(x) && x >= 0;
+  const anFrase = t => `<div class="an-frase"><span class="box-tag">Qué puedes escribir en el informe</span><p>«${t}»</p></div>`;
+
+  const ANALISIS_LQAS = {
+    intro: "Cuando hayas revisado las historias sorteadas, escribe cuántas cumplen el criterio. La app aplica la regla y te dice qué puedes (y qué no) escribir en el informe.",
+    campos: [
+      { k: "rev", l: "Historias revisadas", phDe: u => u && u.plan ? String(u.plan.n) : "" },
+      { k: "cum", l: "Cuántas cumplen", ph: "p. ej. 18" }
+    ],
+    calcula(st, u) {
+      if (!u || !u.plan) return { html: `<p class="step-note">Primero completa los parámetros de arriba para tener el plan (n y c).</p>`, lleno: false };
+      const { n, c } = u.plan, cum = anNum(st.an_cum), rev = anNum(st.an_rev) === null ? n : anNum(st.an_rev);
+      if (cum === null) return { html: `<p class="step-note">Plan: revisar <b>${n}</b> historias; verde si cumplen <b>${c}</b> o más.</p>`, lleno: false };
+      if (!anEntero(cum) || !anEntero(rev) || rev === 0) return { html: `<div class="error-box">Escribe números enteros (0, 1, 2…).</div>`, lleno: false };
+      if (cum > rev) return { html: `<div class="error-box">No pueden cumplir más historias (${cum}) de las revisadas (${rev}).</div>`, lleno: false };
+      const fallos = rev - cum;
+      let verde = null, aviso = "";
+      if (rev === n) verde = cum >= c;
+      else if (rev < n) {
+        if (cum >= c) { verde = true; aviso = `Aún faltan ${n - rev} historias, pero ya hay ${cum} que cumplen (la regla pide ${c}): pase lo que pase con las restantes, el resultado será verde. Puedes parar aquí.`; }
+        else if (fallos > n - c) { verde = false; aviso = `Aún faltan ${n - rev} historias, pero ya hay ${fallos} que no cumplen (como mucho se toleran ${n - c}): aunque todas las restantes cumplieran, el resultado sería rojo. Puedes parar aquí.`; }
+        else return { html: `<div class="warn">⚠ Faltan <b>${n - rev}</b> historias por revisar. La regla (c = ${c}) solo vale con las ${n} del plan: termina la revisión antes de decidir.</div>`, lleno: true };
+      } else return { html: `<div class="warn">⚠ El plan es revisar <b>${n}</b> historias y has escrito ${rev}. Aplica la regla solo a las ${n} primeras del sorteo (las demás pueden servir de reserva por si alguna no es válida).</div>`, lleno: true };
+      const pU = nf(anNum(st.pU)), w = S.wilson(cum, rev, 0.95);
+      const sem = verde
+        ? `<div class="an-sem an-sem--verde"><span class="sem-luz" aria-hidden="true"></span><div><b>VERDE · sin evidencia de problema</b><span>${cum} de ${rev} cumplen; la regla pide al menos ${c} de ${n}.</span></div></div>`
+        : `<div class="an-sem an-sem--rojo"><span class="sem-luz" aria-hidden="true"></span><div><b>ROJO · hay que investigar</b><span>${cum} de ${rev} cumplen; la regla pide al menos ${c} de ${n}.</span></div></div>`;
+      const frase = verde
+        ? `Con una muestra aleatoria de ${n} historias (LQAS, α ${nf(anNum(st.alpha))} %, β ${nf(anNum(st.beta))} %), no hay evidencia de que el cumplimiento esté por debajo del estándar del ${pU} %.`
+        : `Con una muestra aleatoria de ${n} historias (LQAS, α ${nf(anNum(st.alpha))} %, β ${nf(anNum(st.beta))} %), el cumplimiento podría estar por debajo del estándar del ${pU} %: se recomienda investigar las causas y planificar mejoras.`;
+      return { lleno: true, html: sem + (aviso ? `<div class="note">ℹ ${aviso}</div>` : "") + anFrase(frase) +
+        `<div class="box box--trampa"><span class="box-tag">Lo que no debes escribir</span><p>«El cumplimiento es del ${nf(cum / rev * 100, 0)} %». Es solo el dato de la muestra: con ${rev} historias, el cumplimiento real podría estar entre el ${nf(w.lo * 100, 0)} % y el ${nf(w.hi * 100, 0)} %. LQAS decide; no mide.</p></div>` +
+        (verde ? "" : `<p class="step-note">Rojo no es una sentencia: es un aviso para analizar qué está fallando (formación, circuito, registro…) y volver a auditar tras las mejoras.</p>`) };
+    }
+  };
+
+  const ANALISIS_PROP = {
+    intro: "Cuando hayas revisado la muestra, escribe cuántos casos has podido evaluar y cuántos cumplen. La app calcula el porcentaje con su horquilla de error y, si quieres, lo compara con un estándar.",
+    campos: [
+      { k: "rev", l: "Casos evaluados", phDe: u => u && u.plan ? String(u.plan.n) : "" },
+      { k: "cum", l: "Cuántos cumplen", ph: "p. ej. 64" },
+      { k: "est", l: "Estándar a comparar (%)", ph: "opcional" }
+    ],
+    calcula(st, u) {
+      const cum = anNum(st.an_cum), rev = anNum(st.an_rev) === null ? (u && u.plan ? u.plan.n : null) : anNum(st.an_rev), est = anNum(st.an_est);
+      const conf = anNum(st.conf);
+      if (cum === null) return { html: `<p class="step-note">Escribe cuántos casos cumplen el criterio para ver el resultado con su horquilla.</p>`, lleno: false };
+      if (rev === null) return { html: `<p class="step-note">Escribe cuántos casos has evaluado.</p>`, lleno: false };
+      if (!anEntero(cum) || !anEntero(rev) || rev === 0) return { html: `<div class="error-box">Escribe números enteros (0, 1, 2…).</div>`, lleno: false };
+      if (cum > rev) return { html: `<div class="error-box">No pueden cumplir más casos (${cum}) de los evaluados (${rev}).</div>`, lleno: false };
+      if (est !== null && (Number.isNaN(est) || est <= 0 || est >= 100)) return { html: `<div class="error-box">El estándar debe estar entre 0 y 100 %.</div>`, lleno: false };
+      const cf = conf !== null && conf > 50 && conf < 100 ? conf / 100 : 0.95;
+      const w = S.wilson(cum, rev, cf), p1 = x => nf(x * 100, 1) + " %";
+      let html = `<div class="an-res"><div class="an-res-big">${p1(w.p)}</div><div>cumplen <b>${cum}</b> de <b>${rev}</b></div><div class="an-ic">IC ${nf(cf * 100)} %: <b>${p1(w.lo)} – ${p1(w.hi)}</b></div></div>`;
+      html += `<p>Con un ${nf(cf * 100)} % de confianza, el cumplimiento real está entre el <b>${p1(w.lo)}</b> y el <b>${p1(w.hi)}</b> (método de Wilson). Es una horquilla de ±${nf((w.hi - w.lo) / 2 * 100, 1)} puntos${u && u.plan && u.plan.e ? `; habías planificado ±${nf(u.plan.e)}` : ""}.</p>`;
+      if (u && u.plan && rev < u.plan.n) html += `<div class="note">ℹ Has evaluado menos casos de los previstos (${u.plan.n}): la horquilla es más ancha de lo planificado.</div>`;
+      if (rev < 30) html += `<div class="warn">⚠ Con menos de 30 casos la horquilla es muy ancha: no informes el porcentaje como si fuera exacto. Para decidir si se alcanza un estándar, usa <a href="#/lqas">LQAS</a>.</div>`;
+      if (est !== null) {
+        const e = est / 100;
+        html += e > w.hi ? `<div class="an-sem an-sem--rojo"><span class="sem-luz" aria-hidden="true"></span><div><b>Por debajo del estándar del ${nf(est)} %</b><span>El estándar queda por encima de toda la horquilla.</span></div></div>`
+          : e < w.lo ? `<div class="an-sem an-sem--verde"><span class="sem-luz" aria-hidden="true"></span><div><b>Por encima del estándar del ${nf(est)} %</b><span>Toda la horquilla queda por encima del estándar.</span></div></div>`
+          : `<div class="an-sem an-sem--gris"><span class="sem-luz" aria-hidden="true"></span><div><b>No se puede asegurar si se alcanza el estándar del ${nf(est)} %</b><span>La horquilla incluye el estándar: haría falta más muestra (o decidir con LQAS).</span></div></div>`;
+      }
+      html += anFrase(`Cumplimiento del ${p1(w.p)} (IC ${nf(cf * 100)} %: ${p1(w.lo)} – ${p1(w.hi)}), en una muestra aleatoria de ${rev} casos.`);
+      return { html, lleno: true };
+    }
+  };
+
   // ---------- Definición de calculadoras ----------
   const CALCS = [
     // ===================== 1. UNA PROPORCIÓN =====================
@@ -193,6 +287,7 @@
           help: "Porcentaje que crees que encontrarás (por un estudio previo o un piloto). Si no tienes ni idea, usa 50 %: es el caso más conservador porque p(1−p) es máximo, y garantiza una muestra suficiente sea cual sea el valor real." },
         F_NPOP, F_LOSS
       ],
+      analisis: ANALISIS_PROP,
       example: { conf: "95", e: "5", p: "80", N: "1200", loss: "10" },
       exampleText: "Ejemplo: en un hospital con 1200 ingresos al año se quiere estimar el % de historias con el registro de alergias completo. Se espera un 80 %, con precisión de ±5 puntos, confianza del 95 % y un 10 % de historias inutilizables.",
       compute(v) {
@@ -222,7 +317,7 @@
           big: { label: "Tamaño de muestra necesario", value: nf(r.nFinal, 0), sub: "casos (historias, pacientes, registros…)" + (L > 0 ? " · ya incluye pérdidas" : "") },
           extras: [["n sin pérdidas", nf(r.n, 0)], N ? ["n₀ sin corrección", nf(r.n0c, 0)] : null].filter(Boolean),
           interp: `Si analizas <b>${nf(r.nFinal, 0)}</b> casos, podrás estimar el porcentaje con un margen de error de <b>±${nf(v.e)} puntos</b> y una confianza del <b>${nf(v.conf)} %</b>. Por ejemplo, si en la muestra obtienes un ${nf(v.p)} %, el valor real de la población estaría entre ${nf(lo)} % y ${nf(hi)} %.`,
-          warns, steps, mini: nf(r.nFinal, 0), extraHtml: sorteoHtml(r.nFinal, N)
+          plan: { n: r.n, e: v.e }, warns, steps, mini: nf(r.nFinal, 0), extraHtml: sorteoHtml(r.nFinal, N)
         };
       }
     },
@@ -486,6 +581,7 @@
           help: "Número total de casos del lote (la «caja de galletas», es decir, la población que quieres juzgar): por ejemplo, todas las historias del periodo. No es la muestra: la muestra (n) es lo que calcula la app. Si conoces N, se usa la distribución HIPERGEOMÉTRICA y, si el lote es pequeño (unos cientos de casos o menos), hacen falta menos historias. Si el lote es grande, N apenas cambia el resultado (como la cucharada de sopa: sirve igual para una olla que para un caldero) y puedes dejarlo vacío." },
         F_LOSS
       ],
+      analisis: ANALISIS_LQAS,
       example: { pU: "85", pL: "60", alpha: "5", beta: "20", N: "", loss: "0" },
       pageHtml() {
         return `<details class="facil tabla-exacta no-print" id="tabla-exacta"><summary>Tabla de consulta exacta (como las de Lemeshow)</summary><div class="facil-body">
@@ -542,7 +638,83 @@
           extras: [["n", nf(n, 0)], ["c", nf(c, 0)], ["α real", pc(aR, 1)], ["β real", pc(bR, 1)], ["Modelo", hyp ? "Hipergeométrica" : "Binomial"]],
           interp: `Revisa <b>${n}</b> historias elegidas al azar. Si al menos <b>${c}</b> cumplen → <b>verde</b>: no hay evidencia de que se incumpla el estándar del ${nf(v.pU)} %. Si cumplen ${c - 1} o menos → <b>rojo</b>: hay que investigar. Si el servicio cumple de verdad el estándar, solo saldrá rojo por mala suerte el ${pc(aR, 1)} de las veces (falsa alarma); si está en el umbral del ${nf(v.pL)} % o peor, saldrá verde por error como mucho el ${pc(bR, 1)} de las veces (fuego sin alarma).`,
           warns, notes, steps, mini: `n = ${nf(r.nFinal, 0)} · c = ${c}`,
-          sem, extraHtml: ocChart(n, c, N, pL, pU, aR, bR) + sorteoHtml(r.nFinal, N)
+          plan: { n, c }, sem, extraHtml: ocChart(n, c, N, pL, pU, aR, bR) + sorteoHtml(r.nFinal, N)
+        };
+      }
+    },
+
+    // ===================== REPARTO POR ESTRATOS =====================
+    {
+      id: "estratos", short: "Reparto por estratos", title: "Repartir la muestra por estratos",
+      q: "¿Tu población tiene grupos distintos (turnos, unidades, consultas) y quieres que todos estén representados?",
+      a: "Calculadora de <b>reparto por estratos</b> (muestreo estratificado)",
+      what: "Reparte el tamaño de muestra que ya has calculado entre los grupos (estratos) de la población, y sortea los casos dentro de cada grupo.",
+      when: "Úsala cuando la población tiene subgrupos que pueden comportarse distinto (mañana, tarde y noche; varias plantas o consultas) y quieres que la muestra los refleje a todos. Primero calcula cuántos casos necesitas con <a href=\"#/proporcion\">Un porcentaje</a> u otra calculadora.",
+      idea: "Si en una caja de bombones hay tres sabores y quieres opinar de la caja entera, coges de cada sabor <b>en proporción</b> a cuántos hay: más de los que abundan y menos de los raros. Así ningún sabor queda fuera por mala suerte.",
+      facil: `
+        <h3>Dos formas de repartir</h3>
+        <ul>
+          <li><b>Proporcional</b> (la habitual): cada estrato aporta casos según su tamaño. Con 300 historias de mañana, 200 de tarde y 100 de noche, y una muestra de 60: <b>30, 20 y 10</b>. El porcentaje global se calcula directamente con todos los casos juntos.</li>
+          <li><b>Igual en cada estrato</b>: el mismo número en todos. Sirve para <b>comparar</b> estratos entre sí, pero para dar un porcentaje global hay que <b>ponderar</b> cada estrato por su tamaño.</li>
+        </ul>
+        <div class="box box--practica"><span class="box-tag">En la práctica</span><p>Si lo que quieres es una <b>decisión para cada unidad</b> (por ejemplo, «¿alcanza el estándar cada planta?»), no repartas una muestra: haz un <a href="#/lqas">LQAS</a> por unidad, con su propio n.</p></div>
+        <div class="box box--trampa"><span class="box-tag">Ojo, trampa</span><p>Estratificar no arregla una muestra de conveniencia: dentro de cada estrato los casos se tienen que <b>sortear</b>. La app lo hace por ti si indicas el tamaño de cada estrato.</p></div>`,
+      fields: [],
+      custom: true,
+      newRow: { nom: "", N: "" },
+      defaults: { n: "", modo: "prop", rows: [{ nom: "", N: "" }, { nom: "", N: "" }, { nom: "", N: "" }] },
+      example: { n: "60", modo: "prop", rows: [{ nom: "Turno de mañana", N: "300" }, { nom: "Turno de tarde", N: "200" }, { nom: "Turno de noche", N: "100" }] },
+      exampleText: "Ejemplo: se van a auditar 60 historias de un periodo con 300 ingresos de mañana, 200 de tarde y 100 de noche.",
+      formHtml() {
+        const st = state[this.id];
+        const rows = st.rows.map((r, i) => `<div class="cmp-row" data-row="${i}">
+          <div class="cmp-row-head"><span class="cmp-num">${i + 1}</span><input class="cmp-in cmp-nom" data-row="${i}" data-k="nom" type="text" autocomplete="off" placeholder="Estrato ${i + 1} (p. ej. turno de noche)" aria-label="Nombre del estrato ${i + 1}" value="${esc(r.nom)}" />${st.rows.length > 1 ? `<button type="button" class="icon-btn cmp-del" data-act="cmp-del" data-row="${i}" aria-label="Quitar el estrato ${i + 1}">✕</button>` : ""}</div>
+          <div class="cmp-nums cmp-nums--1"><label><span>Casos en el estrato (N)</span><input class="cmp-in" data-row="${i}" data-k="N" type="text" inputmode="numeric" autocomplete="off" value="${esc(r.N)}" /></label></div></div>`).join("");
+        return `<div class="field"><div class="field-head"><span class="field-label">Tamaño de muestra total (n)</span><button type="button" class="info-btn" data-info="est-n" aria-expanded="false" aria-label="Ayuda: tamaño de muestra">i</button></div>
+          <p class="help" id="help-est-n" hidden>El número de casos que ya has calculado con otra calculadora (por ejemplo, con Un porcentaje), incluidas las pérdidas.</p>
+          <div class="input-wrap"><input class="cmp-in" data-k="n" type="text" inputmode="numeric" autocomplete="off" placeholder="p. ej. 60" aria-label="Tamaño de muestra total" value="${esc(st.n)}" /><span class="input-unit">casos</span></div></div>
+          <div class="field"><div class="field-head"><span class="field-label">Forma de repartir</span></div>
+          <div class="seg" data-seg="modo"><button type="button" data-v="prop" class="${st.modo === "prop" ? "active" : ""}">Proporcional</button><button type="button" data-v="igual" class="${st.modo === "igual" ? "active" : ""}">Igual en cada estrato</button></div></div>
+          <div class="field"><div class="field-head"><span class="field-label">Estratos</span></div>
+          <div id="cmp-rows">${rows}</div>
+          <button type="button" class="btn cmp-add" data-act="cmp-add">+ Añadir estrato</button></div>`;
+      },
+      compute() {
+        const st = state[this.id], E = [], ok = [];
+        const n = parseNum(st.n);
+        if (n === null) E.push({ m: "Falta el tamaño de muestra total (n).", missing: true });
+        else if (!Number.isInteger(n) || n < 1) E.push({ m: "El tamaño de muestra debe ser un número entero mayor que 0." });
+        st.rows.forEach((r, i) => {
+          const N = parseNum(r.N), nom = r.nom.trim() || `Estrato ${i + 1}`;
+          if (N === null) return;
+          if (!Number.isInteger(N) || N < 1) { E.push({ m: `«${nom}»: el número de casos debe ser un entero mayor que 0.` }); return; }
+          ok.push({ nom, N });
+        });
+        if (!E.length && ok.length < 2) E.push({ m: "Indica al menos dos estratos con su número de casos.", missing: true });
+        if (E.length) return { errors: E };
+        const Ntot = ok.reduce((a, r) => a + r.N, 0), nh = S.allocate(n, ok.map(r => r.N), st.modo), nUsado = nh.reduce((a, b) => a + b, 0);
+        const pc1 = x => nf(x * 100, 1) + " %";
+        const filas = ok.map((r, i) => `<tr><td>${esc(r.nom)}</td><td>${nf(r.N, 0)}</td><td>${pc1(r.N / Ntot)}</td><td><b>${nh[i]}</b></td><td>${pc1(nh[i] / r.N)}</td></tr>`).join("");
+        const tabla = `<div class="chart-card"><h3>Reparto de la muestra</h3><div class="table-wrap"><table class="mini"><thead><tr><th>Estrato</th><th>N</th><th>% de la población</th><th>Casos a revisar</th><th>Fracción</th></tr></thead><tbody>${filas}<tr class="sel"><td>Total</td><td>${nf(Ntot, 0)}</td><td>100 %</td><td>${nUsado}</td><td>${pc1(nUsado / Ntot)}</td></tr></tbody></table></div></div>`;
+        const sorteo = `<div class="chart-card sorteo no-print"><h3>Sortear los casos de cada estrato</h3><p>Numera los casos de cada estrato desde el 1 y pulsa el botón: saldrá una lista de números distintos para cada uno.</p><div class="toolbar"><button class="btn btn--primary" type="button" data-act="sortear-estratos">Sortear en cada estrato</button></div><div class="sorteo-out" aria-live="polite"></div></div>`;
+        const warns = [], notes = [];
+        if (n > Ntot) warns.push(`La muestra pedida (${n}) es mayor que la población total (${nf(Ntot, 0)}): se revisan todos los casos.`);
+        if (nh.some(x => x === 0)) warns.push("Algún estrato se queda sin casos: aumenta n o usa el reparto igual si necesitas que todos aparezcan.");
+        if (st.modo === "igual") notes.push("Con reparto igual, para dar un porcentaje global hay que ponderar cada estrato por su tamaño (N del estrato ÷ N total); no vale juntar todos los casos sin más.");
+        else notes.push("Con reparto proporcional, el porcentaje global se calcula juntando todos los casos revisados.");
+        notes.push("Si quieres una decisión para cada estrato por separado (por ejemplo, cada planta), haz un LQAS por estrato en lugar de repartir una sola muestra.");
+        const steps = [
+          { t: "Tamaño total de la población", f: [`N = ${ok.map(r => r.N).join(" + ")} = ${Ntot}`] },
+          st.modo === "igual"
+            ? { t: "Reparto igual", f: [`n por estrato = n ÷ nº de estratos = ${n} ÷ ${ok.length} = ${nfix(n / ok.length, 2)}`], note: "Se redondea de forma que la suma sea exactamente n (método de los restos mayores), sin superar el tamaño de ningún estrato." }
+            : { t: "Reparto proporcional", f: ["n del estrato = n × N del estrato ÷ N", ...ok.map((r, i) => `${r.nom}: ${n} × ${r.N} ÷ ${Ntot} = ${nfix(n * r.N / Ntot, 2)} → ${nh[i]}`)], note: "Se redondea de forma que la suma sea exactamente n (método de los restos mayores)." }
+        ];
+        this.sorteoDatos = ok.map((r, i) => ({ nom: r.nom, n: nh[i], N: r.N }));
+        return {
+          big: { label: "Casos a revisar en total", value: nf(nUsado, 0), sub: `repartidos en ${ok.length} estratos (${st.modo === "igual" ? "igual en cada uno" : "proporcional"})` },
+          extras: ok.map((r, i) => [r.nom, nf(nh[i], 0)]),
+          interp: `Revisa ${(l => l.length > 1 ? l.slice(0, -1).join(", ") + " y " + l[l.length - 1] : l[0])(ok.map((r, i) => `<b>${nh[i]}</b> de «${esc(r.nom)}»`))}, elegidos al azar dentro de cada estrato.`,
+          warns, notes, steps, mini: nf(nUsado, 0), extraHtml: tabla + sorteo
         };
       }
     },
@@ -577,6 +749,7 @@
           <p><b>4. Cuarenta oportunidades no son cuarenta pacientes.</b> Las de un mismo paciente se parecen entre sí: el compuesto gana precisión, pero no tanta como si fueran 40 pacientes distintos.</p></div>`,
       fields: [],
       custom: true,
+      newRow: { nom: "", cum: "", opo: "" },
       defaults: { pac: "", rows: [{ nom: "", cum: "", opo: "" }, { nom: "", cum: "", opo: "" }, { nom: "", cum: "", opo: "" }] },
       example: { pac: "15", rows: [
         { nom: "Aspirina en las primeras 24 h", cum: "10", opo: "12" },
@@ -638,6 +811,86 @@
           extras: [["Criterios", nf(ok.length, 0)], ["Media de porcentajes", pc1(media)], ["Peor criterio", pc1(peor.p)]],
           interp: `De cada 100 oportunidades de actuar bien, en <b>${nf(comp * 100, 0)}</b> se actuó bien. Ese es el titular. La noticia está en el desglose: lo más flojo es <b>${esc(peor.nom)}</b> (${pc1(peor.p)})${ordenados[1] ? ` y <b>${esc(ordenados[1].nom)}</b> (${pc1(ordenados[1].p)})` : ""}.`,
           warns, notes, steps, mini: nfix(comp * 100, 1) + " %", extraHtml: bars
+        };
+      }
+    },
+
+    // ===================== CONCORDANCIA ENTRE AUDITORES (KAPPA) =====================
+    {
+      id: "concordancia", short: "Concordancia (kappa)", title: "Concordancia entre auditores (kappa)",
+      q: "¿Quieres comprobar si dos auditoras aplican el criterio igual (pilotar un indicador)?",
+      a: "Calculadora de <b>concordancia</b> (kappa de Cohen)",
+      what: "Mide hasta qué punto dos personas que revisan las <b>mismas historias</b> coinciden al marcar «cumple / no cumple», descontando las coincidencias que se darían por puro azar.",
+      when: "Úsala para <b>pilotar un indicador</b> antes de la auditoría: si dos auditoras no coinciden, el problema suele estar en la definición del indicador, no en las historias. También sirve para formar auditores nuevos.",
+      idea: "Dos profesores corrigen el mismo examen. Si coinciden en casi todo, el criterio de corrección está claro. Pero si casi todos los alumnos aprueban, coincidirían mucho <b>aunque corrigieran a ciegas</b>: el kappa descuenta ese acuerdo «regalado» por el azar.",
+      facil: `
+        <h3>Cómo se hace un pilotaje</h3>
+        <ol>
+          <li>Elige al azar unas <b>30–50 historias</b>, que incluyan casos que cumplen y que no.</li>
+          <li>Dos auditoras las revisan <b>por separado</b>, sin comentarlas.</li>
+          <li>Se cuenta en cuántas coinciden y en cuántas no, y se rellena la tabla de arriba.</li>
+          <li>Si el kappa es bajo, se revisan juntas las discrepancias, se <b>aclara la definición</b> del indicador y se repite con otras historias.</li>
+        </ol>
+        <h3>Cómo leer el kappa</h3>
+        <div class="table-wrap"><table class="mini facil-tabla"><thead><tr><th>Kappa</th><th>Concordancia</th><th>¿Qué hacer?</th></tr></thead><tbody>
+          <tr><td>&lt; 0,20</td><td>Pobre o leve</td><td>Redefinir el indicador</td></tr>
+          <tr><td>0,21 – 0,40</td><td>Aceptable (débil)</td><td>Aclarar términos y repetir</td></tr>
+          <tr><td>0,41 – 0,60</td><td>Moderada</td><td>Aclarar las discrepancias</td></tr>
+          <tr><td>0,61 – 0,80</td><td>Buena (considerable)</td><td>Suficiente para auditar</td></tr>
+          <tr><td>0,81 – 1</td><td>Muy buena (casi perfecta)</td><td>Ideal</td></tr>
+        </tbody></table></div>
+        <p class="step-note">Escala de Landis y Koch (1977). En auditoría se suele pedir al menos 0,60.</p>
+        <div class="box box--ejemplo"><span class="box-tag">Ejemplo resuelto</span><p>Dos auditoras revisan las mismas 30 historias buscando la escala de caídas registrada. Coinciden en 25 (20 «cumple» y 5 «no cumple»): un 83 % de acuerdo, que parece mucho. Pero, como la mayoría cumple, por azar ya coincidirían en un 62 %. El kappa es <b>0,56</b>: concordancia moderada. Toca aclarar qué cuenta como «escala registrada» antes de auditar.</p></div>
+        <div class="box box--trampa"><span class="box-tag">Ojo, trampa: la paradoja del kappa</span><p>Si casi todas las historias cumplen (o casi ninguna), el kappa puede salir bajo aunque las auditoras coincidan en el 90 % de los casos. Por eso la app muestra también el <b>acuerdo observado</b> y el <b>PABAK</b> (kappa ajustado por prevalencia). Para pilotar, procura que la muestra tenga historias que cumplen y que no.</p></div>`,
+      fields: [
+        { id: "a", label: "Las dos marcan «cumple»", unit: "historias", def: "", ph: "p. ej. 20", help: "Historias en las que ambas auditoras han marcado que el criterio se cumple." },
+        { id: "b", label: "A «cumple» · B «no cumple»", unit: "historias", def: "", ph: "p. ej. 2", help: "Historias en las que la auditora A ha marcado «cumple» y la B «no cumple»." },
+        { id: "c", label: "A «no cumple» · B «cumple»", unit: "historias", def: "", ph: "p. ej. 3", help: "Historias en las que la auditora A ha marcado «no cumple» y la B «cumple»." },
+        { id: "d", label: "Las dos marcan «no cumple»", unit: "historias", def: "", ph: "p. ej. 5", help: "Historias en las que ambas auditoras han marcado que el criterio no se cumple." }
+      ],
+      example: { a: "20", b: "2", c: "3", d: "5" },
+      exampleText: "Ejemplo: dos auditoras revisan por separado las mismas 30 historias para comprobar si consta la escala de riesgo de caídas.",
+      compute(v) {
+        const E = [];
+        ["a", "b", "c", "d"].forEach(k => {
+          const x = v[k], lbl = this.fields.find(f => f.id === k).label;
+          if (x === null) E.push({ f: k, m: `Falta «${lbl}».`, missing: true });
+          else if (Number.isNaN(x) || !Number.isInteger(x) || x < 0) E.push({ f: k, m: `«${lbl}» debe ser un número entero (0, 1, 2…).` });
+        });
+        if (E.length) return { errors: E };
+        const n = v.a + v.b + v.c + v.d;
+        if (n < 2) return { errors: [{ f: "a", m: "Hacen falta al menos 2 historias revisadas por las dos auditoras." }] };
+        const r = S.kappa(v.a, v.b, v.c, v.d, 0.95);
+        if (!Number.isFinite(r.k)) return { errors: [], warnOnly: ["Las dos auditoras han marcado todas las historias en la misma categoría: el kappa no se puede calcular. Para pilotar un indicador hacen falta historias que cumplan y que no cumplan."] };
+        const k2 = x => nfix(x, 2), p1 = x => nf(x * 100, 1) + " %";
+        const nivel = r.k < 0 ? ["Peor que el azar", "Las auditoras discrepan más de lo esperable por azar: revisad juntas el criterio."]
+          : r.k <= 0.20 ? ["Pobre o leve", "La definición del indicador no funciona: hay que redefinirla."]
+          : r.k <= 0.40 ? ["Aceptable (débil)", "Hay que aclarar los términos del indicador y repetir el pilotaje."]
+          : r.k <= 0.60 ? ["Moderada", "Conviene revisar juntas las discrepancias y aclarar la definición antes de auditar."]
+          : r.k <= 0.80 ? ["Buena (considerable)", "El indicador está suficientemente claro para auditar."]
+          : ["Muy buena (casi perfecta)", "El indicador está muy bien definido."];
+        const tabla = `<div class="chart-card"><h3>Tabla de coincidencias</h3><div class="table-wrap"><table class="mini kappa-tabla"><thead><tr><th></th><th>B: cumple</th><th>B: no cumple</th><th>Total A</th></tr></thead><tbody>
+          <tr><th>A: cumple</th><td class="kap-si">${v.a}</td><td class="kap-no">${v.b}</td><td>${v.a + v.b}</td></tr>
+          <tr><th>A: no cumple</th><td class="kap-no">${v.c}</td><td class="kap-si">${v.d}</td><td>${v.c + v.d}</td></tr>
+          <tr><th>Total B</th><td>${v.a + v.c}</td><td>${v.b + v.d}</td><td><b>${n}</b></td></tr></tbody></table></div><p>En verde, las coincidencias; en ámbar, las discrepancias (${v.b + v.c}), que son las que hay que revisar juntas.</p></div>`;
+        const steps = [
+          { t: "Acuerdo observado (po)", f: ["po = (a + d) ÷ n", `po = (${v.a} + ${v.d}) ÷ ${n} = ${nfix(r.po, 4)}`] },
+          { t: "Acuerdo esperado por azar (pe)", f: ["pe = pA·pB + (1 − pA)·(1 − pB)", `pA = ${v.a + v.b} ÷ ${n} = ${nfix(r.pA, 4)} · pB = ${v.a + v.c} ÷ ${n} = ${nfix(r.pB, 4)}`, `pe = ${nfix(r.pA, 4)}·${nfix(r.pB, 4)} + ${nfix(1 - r.pA, 4)}·${nfix(1 - r.pB, 4)} = ${nfix(r.pe, 4)}`], note: "pA y pB son la proporción de «cumple» que marca cada auditora." },
+          { t: "Kappa de Cohen", f: ["κ = (po − pe) ÷ (1 − pe)", `κ = (${nfix(r.po, 4)} − ${nfix(r.pe, 4)}) ÷ (1 − ${nfix(r.pe, 4)}) = ${nfix(r.k, 4)}`] },
+          { t: "Intervalo de confianza al 95 % (aproximado)", f: ["ee = √( po·(1 − po) ÷ (n·(1 − pe)²) )", `ee = ${nfix(r.ee, 4)}  →  IC 95 % = κ ± 1,96·ee = ${k2(r.lo)} a ${k2(r.hi)}`], note: "Aproximación de muestra grande; con pocas historias es orientativa." },
+          { t: "PABAK (ajustado por prevalencia y sesgo)", f: ["PABAK = 2·po − 1", `PABAK = 2·${nfix(r.po, 4)} − 1 = ${nfix(r.pabak, 4)}`] }
+        ];
+        const warns = [], notes = [];
+        if (n < 30) warns.push(`Con ${n} historias el kappa es poco estable (mira lo ancho del intervalo: ${k2(r.lo)} a ${k2(r.hi)}). Para pilotar se recomiendan al menos 30.`);
+        const prevAlta = Math.max(r.pA, r.pB) >= 0.85 || Math.min(r.pA, r.pB) <= 0.15;
+        if (prevAlta && r.po >= 0.8 && r.k < 0.6) warns.push(`Paradoja del kappa: las auditoras coinciden en el ${p1(r.po)} de las historias, pero como casi todas están en la misma categoría, el azar explica gran parte del acuerdo. Mira también el PABAK (${k2(r.pabak)}) y, si puedes, pilota con historias más variadas.`);
+        if (Math.abs((v.b) - (v.c)) >= Math.max(3, 0.2 * (v.b + v.c + 1)) && v.b + v.c >= 4) notes.push(`Las discrepancias van sobre todo en un sentido (${v.b > v.c ? "A marca «cumple» más que B" : "B marca «cumple» más que A"}): una de las auditoras es más «generosa». Revisad juntas qué exige el criterio.`);
+        notes.push("Escala de interpretación de Landis y Koch (1977). En auditoría se suele pedir κ ≥ 0,60 antes de empezar.");
+        return {
+          big: { label: "Kappa de Cohen", value: k2(r.k), sub: `Concordancia ${nivel[0].toLowerCase()}` },
+          extras: [["Acuerdo observado", p1(r.po)], ["Acuerdo por azar", p1(r.pe)], ["IC 95 %", `${k2(r.lo)} a ${k2(r.hi)}`], ["PABAK", k2(r.pabak)], ["Historias", nf(n, 0)]],
+          interp: `Las dos auditoras coinciden en <b>${v.a + v.d} de ${n}</b> historias (${p1(r.po)}). Descontando lo que coincidirían por azar (${p1(r.pe)}), el kappa es <b>${k2(r.k)}</b>: concordancia <b>${nivel[0].toLowerCase()}</b>. ${nivel[1]}`,
+          warns, notes, steps, mini: "κ = " + k2(r.k), extraHtml: tabla
         };
       }
     }
@@ -754,6 +1007,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
         <button class="btn" data-act="limpiar">Restablecer</button>
         <button class="btn" data-act="informe">Ver informe</button>
         <button class="btn" data-act="imprimir">Guardar / imprimir</button>
+        <button class="btn" data-act="enlace" title="Crea un enlace que abre esta calculadora con los mismos datos">Compartir enlace</button>
       </div>
       <p class="page-lead no-print" id="example-text" hidden></p>
       <div class="calc-grid">
@@ -763,6 +1017,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
         </section>
         <section class="calc-result-col" id="res" aria-live="polite" aria-label="Resultado"></section>
       </div>
+      ${c.analisis ? analisisHtml(c) : ""}
       ${c.pageHtml ? c.pageHtml() : ""}
       <div class="print-only print-foot"><span class="autor-titulo">Aplicación desarrollada por</span><span class="autor"><b>Carlos J. Galán Doval</b> · Médico de Familia · Técnico en Calidad y Seguridad del Paciente</span><span class="autor"><b>Rafael J. Romero de Castilla Gil</b> · Médico de Familia · Responsable del Área de Calidad y Seguridad del Paciente</span><span class="autor-area">Área de Gestión Sanitaria Sur de Córdoba · Andalucía</span><span class="autor-uso">De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.</span></div>`;
     syncInputs(); update();
@@ -797,6 +1052,8 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
   function update() {
     const c = current, out = $("#res"); if (!c || !out) return;
     const res = c.compute(readValues(c));
+    c.ultimo = res.errors || res.warnOnly ? null : res;
+    pintarAnalisis();
     $$(".input-wrap").forEach(w => w.classList.remove("invalid"));
     const mini = $("#mini-val");
     if (res.errors && res.errors.length) {
@@ -842,6 +1099,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
         <dt>Pérdidas</dt><dd>Casos que no podrás analizar; se compensan aumentando la muestra.</dd>
         <dt>Población finita (N)</dt><dd>Si la muestra es una fracción importante de la población, se necesitan menos casos.</dd>
         <dt>Error α y error β en LQAS</dt><dd>α = falsa alarma (sale rojo un servicio que cumple). β = fuego sin alarma (sale verde un servicio que está mal). Lo habitual: α 5 %, β 20 % o 10 %.</dd>
+        <dt>Concordancia (kappa)</dt><dd>Hasta qué punto dos auditoras coinciden al revisar las mismas historias, descontando el acuerdo por azar. Se usa para pilotar un indicador.</dd>
         <dt>Estimar frente a clasificar</dt><dd>Estimar da una cifra con su intervalo (muestras grandes); clasificar (LQAS) solo decide «alcanza / no alcanza» con muestras pequeñas.</dd>
         <dt>Muestreo aleatorio</dt><dd>Todas las fórmulas suponen que los casos se eligen al azar. Si no es así, los resultados pueden no ser válidos.</dd>
       </dl></details>
@@ -1048,6 +1306,36 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
     document.body.appendChild(a); a.click(); a.remove(); toast("PDF descargado.", 3000);
   }
 
+  // ---------- Enlaces con los datos ya puestos ----------
+  // El estado de la calculadora viaja en el propio enlace (#/id?d=<JSON>). Solo son números y textos
+  // que escribe el usuario (sin datos de pacientes). Al abrirlo se valida y se limpia la dirección.
+  function enlaceActual() {
+    const c = current, st = state[c.id], d = {};
+    Object.keys(st).forEach(k => { const v = st[k]; if (v !== "" && v !== undefined && v !== null && !(Array.isArray(v) && !v.length)) d[k] = v; });
+    return `${location.origin}${location.pathname}#/${c.id}?d=${encodeURIComponent(JSON.stringify(d))}`;
+  }
+  function cargarDesdeEnlace(c, crudo) {
+    let obj; try { obj = JSON.parse(decodeURIComponent(crudo)); } catch (e) { return false; }
+    if (!obj || typeof obj !== "object") return false;
+    initState(c); const st = state[c.id];
+    const permitidas = new Set([...Object.keys(st), ...c.fields.map(f => f.id), ...(c.analisis ? c.analisis.campos.map(f => "an_" + f.k) : [])]);
+    const texto = v => String(v).slice(0, 200);
+    Object.keys(obj).forEach(k => {
+      if (!permitidas.has(k)) return;
+      const v = obj[k], f = c.fields.find(x => x.id === k);
+      if (k === "rows" && Array.isArray(v)) st.rows = v.slice(0, 50).map(r => { const o = JSON.parse(JSON.stringify(c.newRow || {})); Object.keys(o).forEach(kk => { if (r && r[kk] !== undefined) o[kk] = texto(r[kk]); }); return o; });
+      else if (f && f.type === "check") st[k] = v === true;
+      else if (["string", "number"].includes(typeof v)) st[k] = texto(v);
+    });
+    return true;
+  }
+  async function compartirEnlace() {
+    const url = enlaceActual(), movil = esIOS() || /Android/i.test(navigator.userAgent);
+    if (movil && navigator.share) { try { await navigator.share({ title: "Tamaño Muestral · " + current.short, url }); } catch (e) { /* cancelado */ } return; }
+    try { await navigator.clipboard.writeText(url); toast("Enlace copiado: pégalo en un correo, un mensaje o la plataforma del curso.", 4000); }
+    catch (e) { window.prompt("Copia este enlace:", url); }
+  }
+
   // ---------- Enrutado ----------
   function buildNav() {
     $("#calc-nav").innerHTML = `<a href="#/" data-r="">Inicio</a>` + CALCS.map(c => `<a href="#/${c.id}" data-r="${c.id}">${esc(c.short)}</a>`).join("");
@@ -1055,6 +1343,12 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
   function route() {
     const [id, qs] = (location.hash.replace(/^#\/?/, "") || "").split("?");
     const c = CALCS.find(x => x.id === id);
+    const md = /(?:^|&)d=([^&]*)/.exec(qs || "");
+    if (c && md) {
+      const ok = cargarDesdeEnlace(c, md[1]);
+      history.replaceState(null, "", `#/${c.id}`);
+      if (ok) setTimeout(() => toast("Datos cargados desde el enlace.", 3000), 50);
+    }
     const informe = !!c && /(^|&)informe=1(&|$)/.test(qs || "");
     document.body.classList.toggle("ver-informe", informe);
     if (c) renderCalc(c); else renderHome();
@@ -1066,8 +1360,10 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
 
   // ---------- Eventos ----------
   view.addEventListener("input", e => {
+    const ai = e.target.closest(".an-in");
+    if (ai) { state[current.id]["an_" + ai.dataset.k] = ai.value; pintarAnalisis(); return; }
     const ci = e.target.closest(".cmp-in");
-    if (ci) { const st = state[current.id]; if (ci.dataset.k === "pac") st.pac = ci.value; else st.rows[Number(ci.dataset.row)][ci.dataset.k] = ci.value; update(); return; }
+    if (ci) { const st = state[current.id]; if (ci.dataset.row === undefined) st[ci.dataset.k] = ci.value; else st.rows[Number(ci.dataset.row)][ci.dataset.k] = ci.value; update(); return; }
     const i = e.target.closest(".fld-input"); if (!i) return;
     state[current.id][i.dataset.id] = i.value; syncChips(); update();
   });
@@ -1089,7 +1385,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       fb.innerHTML = (j === q.ok ? "<b>¡Correcto!</b> " : "<b>No.</b> ") + q.e; fb.hidden = false; return;
     }
     if ((b = t.closest("[data-q]"))) { state[current.id][b.dataset.q] = b.dataset.v; syncInputs(); update(); return; }
-    if ((b = t.closest("[data-seg] button"))) { state[current.id][b.parentNode.dataset.seg] = b.dataset.v; syncInputs(); update(); return; }
+    if ((b = t.closest("[data-seg] button"))) { state[current.id][b.parentNode.dataset.seg] = b.dataset.v; $$("button", b.parentNode).forEach(x => x.classList.toggle("active", x === b)); syncInputs(); update(); return; }
     if ((b = t.closest("[data-act]"))) {
       const a = b.dataset.act;
       if (a === "tabla-beta") { tablaBeta = Number(b.dataset.b); pintarTablaExacta(); return; }
@@ -1101,7 +1397,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       }
       if (a === "cmp-add" || a === "cmp-del") {
         const st = state[current.id];
-        if (a === "cmp-add") st.rows.push({ nom: "", cum: "", opo: "" }); else st.rows.splice(Number(b.dataset.row), 1);
+        if (a === "cmp-add") st.rows.push(JSON.parse(JSON.stringify(current.newRow))); else st.rows.splice(Number(b.dataset.row), 1);
         const keep = $("#example-text").hidden; renderCalc(current); $("#example-text").hidden = keep; $("#example-text").textContent = current.exampleText;
         if (a === "cmp-add") { const ins = $$(".cmp-nom"); ins[ins.length - 1].focus(); }
         return;
@@ -1116,7 +1412,12 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       } else if (a === "informe") location.hash = `#/${current.id}?informe=1`;
       else if (a === "volver") location.hash = `#/${current.id}`;
       else if (a === "imprimir") { if (esIOS()) guardarPDF(); else window.print(); }
+      else if (a === "enlace") compartirEnlace();
       else if (a === "ver") $("#res").scrollIntoView({ behavior: "smooth", block: "start" });
+      else if (a === "sortear-estratos") {
+        const o = b.closest(".sorteo").querySelector(".sorteo-out");
+        o.innerHTML = (current.sorteoDatos || []).filter(x => x.n > 0).map(x => `<h4 class="sorteo-estrato">${esc(x.nom)} · ${x.n} de ${nf(x.N, 0)}</h4>` + sortear("simple", x.n, x.N)).join("");
+      }
       else if (a === "sortear") { const o = b.closest(".sorteo").querySelector(".sorteo-out"); o.innerHTML = sortear(b.dataset.tipo, Number(b.dataset.n), Number(b.dataset.pop)); }
     }
   });
@@ -1202,7 +1503,14 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
     navigator.serviceWorker.addEventListener("controllerchange", () => { if (recargando || !actualizando) return; recargando = true; location.reload(); });
   }
 
-  window.TamanoMuestral = { generarPDF };   // solo para pruebas desde la consola
+  window.TamanoMuestral = { generarPDF, enlaceActual };   // solo para pruebas desde la consola
+
+  // ---------- Instalar como aplicación ----------
+  let avisoInstalar = null;
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); avisoInstalar = e; const b = $("#btn-instalar"); if (b) b.hidden = false; });
+  $("#btn-instalar").addEventListener("click", async () => { if (!avisoInstalar) return; avisoInstalar.prompt(); try { await avisoInstalar.userChoice; } catch (e) { /* */ } avisoInstalar = null; $("#btn-instalar").hidden = true; });
+  window.addEventListener("appinstalled", () => { const b = $("#btn-instalar"); if (b) b.hidden = true; });
+  if (matchMedia("(display-mode: standalone)").matches || navigator.standalone) { const i = $("#instalar-bloque"); if (i) i.classList.add("instalada"); }
 
   // ---------- Arranque ----------
   buildNav();

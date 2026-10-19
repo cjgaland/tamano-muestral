@@ -22,7 +22,7 @@
       document.documentElement.setAttribute("data-tema", t);
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=2026.10" />
+  <link rel="stylesheet" href="styles.css?v=2026.11" />
 </head>
 <body>
 
@@ -74,6 +74,7 @@
         <div class="modal-bloque">
           <strong>Cómo se usa</strong>
           <p>Elige la calculadora en la pantalla de inicio, rellena los parámetros (cada ⓘ explica qué significan) o pulsa <b>Cargar ejemplo</b>. El resultado se calcula al instante y se muestra el desarrollo paso a paso. Funciona sin conexión y puedes imprimir un informe.</p>
+          <p><b>Consejo:</b> instálala en el móvil para tenerla a mano. En «Acerca de» (botón ⓘ de arriba) se explica cómo.</p>
         </div>
         <label class="modal-check"><input type="checkbox" id="modal-no-repetir" /> <span>No mostrar este mensaje al iniciar</span></label>
       </div>
@@ -104,6 +105,17 @@
           <strong>Limitaciones</strong>
           <p>Se asume muestreo aleatorio simple. Si el muestreo es por conglomerados o estratificado, multiplica por el efecto de diseño o consulta a un estadístico.</p>
         </div>
+        <div class="modal-bloque" id="instalar-bloque">
+          <strong>Instalar en el móvil o el ordenador</strong>
+          <p class="instalada-msg">Ya estás usando la aplicación instalada.</p>
+          <ul class="instalar-lista">
+            <li><b>iPhone o iPad</b> (Safari): pulsa el botón <b>Compartir</b> (el cuadrado con una flecha hacia arriba) y elige <b>«Añadir a pantalla de inicio»</b>.</li>
+            <li><b>Android</b> (Chrome): abre el menú <b>⋮</b> y elige <b>«Instalar aplicación»</b> o «Añadir a pantalla de inicio».</li>
+            <li><b>Ordenador</b> (Chrome o Edge): pulsa el icono de instalar que aparece a la derecha de la barra de direcciones.</li>
+          </ul>
+          <p>Una vez instalada se abre como una app más y <b>funciona sin conexión</b>.</p>
+          <button type="button" class="btn btn--primary" id="btn-instalar" hidden>Instalar ahora</button>
+        </div>
         <div class="modal-bloque">
           <strong>Historial de versiones</strong>
           <div id="historial-versiones"></div>
@@ -132,7 +144,7 @@
     </div>
   </div>
 
-  <script src="stats.js?v=2026.10"></script>
-  <script src="app.js?v=2026.10"></script>
+  <script src="stats.js?v=2026.11"></script>
+  <script src="app.js?v=2026.11"></script>
 </body>
 </html>

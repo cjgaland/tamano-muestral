@@ -113,4 +113,18 @@ for (const b of [0.20, 0.10]) t(`todas las casillas cumplen α ≤ 5 % y β ≤ 
   assert.equal(celdas, 124);
 });
 
+console.log("\n9. Analizar resultados, concordancia y estratos");
+t("Wilson 64/97 al 95 % = 56,10–74,64 % (R: prop.test sin corrección)", () => { const w = S.wilson(64, 97, 0.95); close(w.lo, 0.561036, 1e-6); close(w.hi, 0.746377, 1e-6); });
+t("Wilson 16/20 al 95 % = 58,40–91,93 % (R: prop.test)", () => { const w = S.wilson(16, 20, 0.95); close(w.lo, 0.583983, 1e-6); close(w.hi, 0.919342, 1e-6); });
+t("Wilson con 0 o n éxitos no sale de [0, 1]", () => { const a = S.wilson(0, 10, 0.95), b = S.wilson(10, 10, 0.95); assert.equal(a.lo, 0); assert.equal(b.hi, 1); assert.ok(a.hi > 0 && b.lo < 1); });
+t("kappa del ejemplo clásico (20, 5, 10, 15): po 0,70, pe 0,50, κ 0,40", () => { const k = S.kappa(20, 5, 10, 15, 0.95); close(k.po, 0.7, 1e-12); close(k.pe, 0.5, 1e-12); close(k.k, 0.4, 1e-12); close(k.pabak, 0.4, 1e-12); });
+t("paradoja del kappa: mucho acuerdo y prevalencia alta → κ bajo, PABAK alto", () => { const k = S.kappa(45, 2, 2, 1, 0.95); assert.ok(k.po >= 0.9 && k.k < 0.35 && k.pabak > 0.8); });
+t("reparto proporcional 60 en 300/200/100 → 30/20/10", () => assert.deepEqual(S.allocate(60, [300, 200, 100], "prop"), [30, 20, 10]));
+t("reparto: suma exacta y nunca más que el estrato", () => {
+  for (const [n, Ns, m] of [[10, [5, 5, 5], "prop"], [30, [100, 5, 50], "igual"], [7, [3, 1, 1], "prop"], [100, [10, 20], "prop"]]) {
+    const r = S.allocate(n, Ns, m); assert.equal(r.reduce((x, y) => x + y, 0), Math.min(n, Ns.reduce((x, y) => x + y, 0)));
+    r.forEach((v, i) => assert.ok(v <= Ns[i] && v >= 0));
+  }
+});
+
 console.log(`\n${ok} pruebas superadas.`);

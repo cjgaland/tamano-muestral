@@ -9,7 +9,7 @@ PWA estática (sin build, sin dependencias, sin CDN) de cálculo de tamaño mues
 - `index.html` — esqueleto, header, nav, modales (bienvenida y Acerca de). Script inline en `<head>` que fija `data-tema` (claro/oscuro) antes de pintar.
 - `styles.css` — tokens (claro por defecto; `html[data-tema="oscuro"]`), móvil primero (360 px), layout 2 columnas >= 900 px, bloque `@media print` para el informe.
 - `stats.js` — funciones PURAS (sin DOM). `window.Stats` en navegador y `module.exports` en Node.
-- `app.js` — definición declarativa de calculadoras (`CALCS`: campos, ayudas, ejemplo, `compute(v)` que devuelve resultado, avisos y pasos), render, eventos, enrutado por hash (`#/proporcion`, `#/media`, `#/dos-proporciones`, `#/dos-medias`, `#/lqas`, `#/compuesto`), tema, modales. Todo cálculo se delega en `Stats`.
+- `app.js` — definición declarativa de calculadoras (`CALCS`: campos, ayudas, ejemplo, `compute(v)` que devuelve resultado, avisos y pasos), render, eventos, enrutado por hash (`#/proporcion`, `#/media`, `#/dos-proporciones`, `#/dos-medias`, `#/lqas`, `#/estratos`, `#/compuesto`, `#/concordancia`; `?informe=1` = vista de informe; `?d=<JSON>` = cargar datos desde un enlace), tema, modales. Todo cálculo se delega en `Stats`.
 - `sw.js` — network-first con caché de respaldo. Subir `CACHE_NAME` al cambiar archivos. Aviso de actualización (ver §6).
 - `tests/stats.test.mjs` — `node tests/stats.test.mjs`.
 
@@ -24,6 +24,10 @@ z = cuantil normal (Acklam + un paso de Halley, error < 1e-9; erfc propia). Siem
 
 6. Indicador compuesto de porcentaje simple (Saturno, UT19): Σ cumplimientos ÷ Σ oportunidades (`Stats.composite`). Se muestra también la media de porcentajes solo para compararla (no es el compuesto). No es un tamaño muestral: analiza resultados.
 
+7. Analizar resultados: proporción con IC de Wilson (`Stats.wilson`, sin corrección de continuidad; coincide con `prop.test(correct = FALSE)` de R). LQAS: verde si cumplen ≥ c de n; parada anticipada válida si ya hay c cumplimientos o más de n − c fallos.
+8. Kappa de Cohen 2×2 (`Stats.kappa`): po, pe, κ = (po − pe)/(1 − pe), ee aproximado de Cohen √(po(1−po)/(n(1−pe)²)), PABAK = 2po − 1. Interpretación de Landis y Koch (1977). Aviso de paradoja con prevalencia ≥ 85 % o ≤ 15 %.
+9. Reparto por estratos (`Stats.allocate`): proporcional o igual; redondeo por restos mayores, suma exacta n y sin superar ningún estrato.
+
 ## 4. Decisiones
 - Los porcentajes se introducen en % y se convierten a proporciones en `compute`; los textos de desarrollo muestran las proporciones sustituidas.
 - LQAS con N: la regla (d) se aplica a n casos evaluables; las pérdidas solo aumentan los casos a seleccionar (limitado a N). Con N conocido se avisa de la n binomial equivalente. Si K_L = K_U tras redondear, se pide separar umbrales.
@@ -37,6 +41,10 @@ z = cuantil normal (Acklam + un paso de Halley, error < 1e-9; erfc propia). Siem
 - index.html carga `styles.css`, `stats.js` y `app.js` con `?v=<APP_VERSION>`: al publicar, actualizar también esos tres `?v=` (evita que el navegador mezcle archivos de dos versiones). El SW busca en caché con `ignoreSearch`.
 - Tabla de consulta exacta en LQAS (`pageHtml` + `tablaExactaHtml`): rejilla umbral 10–85 × estándar 50–95 como las A1/A2 de Lemeshow, binomial, α 5 % y β 20/10 %. Se calcula al abrir el `<details>` (≈0,3 s por tabla) y se cachea; tocar una casilla carga el plan. Test: las 248 casillas cumplen α y β exactos. Con N grande el n apenas cambia (se estabiliza en el binomial): es correcto y se explica en la ayuda de N.
 - Informe: botones «Ver informe» (ruta `#/<id>?informe=1`, clase `body.ver-informe` que reproduce en pantalla los estilos de impresión) y «Guardar / imprimir». En escritorio/Android → `window.print()`. En iOS (`esIOS()`) `window.print()` no hace nada en la PWA instalada, así que `generarPDF()` maqueta una copia del informe a 720 px, la dibuja en canvas palabra a palabra con las posiciones del DOM (cajas, bordes, viñetas de listas y SVG como imagen), pagina sin partir bloques (`SIN_CORTE`), y `pdfDesdeJPEGs()` escribe un PDF 1.4 con una imagen JPEG por página A4; se comparte con `navigator.share({ files })`. El PDF se pre-genera al abrir «Ver informe» en iOS porque Safari solo deja abrir Compartir justo tras el toque. Probado en Chromium (PDF de 3 páginas correcto); pendiente confirmar en un iPhone real.
+- «Ya tengo los resultados» (`analisis` en la calculadora: `campos` + `calcula(st, c.ultimo)`; el estado guarda `an_<campo>`; `c.ultimo` es el último resultado válido, con `plan`). Se dibuja fuera de `#res` para no perder el foco al escribir. En informe/impresión se ocultan los campos y, si está vacío, el bloque entero (`an-vacio`).
+- Calculadoras `custom` (compuesto, estratos): `formHtml`, `defaults`, `newRow`, `example`; eventos genéricos `.cmp-in` (con `data-row` → fila; sin él → clave de primer nivel) y `cmp-add`/`cmp-del`.
+- «Compartir enlace»: `enlaceActual()` serializa el estado en `#/id?d=`; `cargarDesdeEnlace()` solo acepta claves conocidas, textos ≤ 200 caracteres y ≤ 50 filas, y luego limpia la dirección con `history.replaceState`. Todo lo que procede del enlace se pinta con `esc()` (probado con un nombre con HTML: no se ejecuta).
+- Instalar: bloque en «Acerca de» con instrucciones iPhone/Android/ordenador y botón «Instalar ahora» si el navegador lanza `beforeinstallprompt`; si ya está instalada se indica.
 - Sorteo de casos (`sorteoHtml`/`sortear`) en proporción, media y LQAS cuando se conoce N: aleatorio simple o sistemático (k = N/n, arranque al azar). Usa Math.random (suficiente para elegir historias).
 - `compute` devuelve `warns` (⚠ ámbar: algo dudoso en los datos) y `notes` (ℹ verde azulado: información, p. ej. n binomial equivalente, redondeo de K, zona gris, z frente a t). No mezclar.
 - Dos medias usa z (63 por grupo en el caso de referencia); `power.t.test` de R, con t, da 64. Se explica en una nota.
