@@ -293,6 +293,14 @@ svg.oc .lbl-u { fill: var(--green); font: 700 11px var(--font); }
 :root[data-tema="oscuro"] .update-banner { color: #06231f; }
 :root[data-tema="oscuro"] .update-banner button { border-color: rgba(0,0,0,.25); background: rgba(0,0,0,.12); }
 .about-credit { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--text-2); font-size: 13.5px; }
+/* Autoría: una línea por autor, el área común y el aviso de uso */
+.autor-titulo, .autor, .autor-area, .autor-uso { display: block; }
+.autor-titulo { font-size: .9em; letter-spacing: .3px; text-transform: uppercase; font-weight: 700; margin-bottom: 3px; }
+.autor + .autor { margin-top: 2px; }
+.autor b { color: var(--text-1); }
+.autor-area { margin-top: 4px; font-weight: 600; }
+.autor-uso { margin-top: 4px; font-style: italic; }
+.app-footer .autor-titulo, .app-footer .autor, .app-footer .autor-area { line-height: 1.5; }
 
 /* ---------- Impresión ---------- */
 /* ---------- Vista «Ver informe» (mismo aspecto que el impreso, en pantalla) ---------- */
