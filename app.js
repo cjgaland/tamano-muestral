@@ -10,8 +10,12 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.07";
+  const APP_VERSION = "2026.08";
   const NOVEDADES = [
+    { version: "2026.08", fecha: "Octubre 2026", titulo: "Ver informe y guardar en el iPhone", cambios: [
+      "Nuevo botón «Ver informe»: muestra en pantalla el informe tal y como saldrá impreso.",
+      "«Guardar / imprimir» funciona ahora en el iPhone y el iPad: crea un PDF y abre el menú Compartir (Imprimir, Guardar en Archivos, Mail, WhatsApp…).",
+      "En el ordenador y en Android, «Guardar / imprimir» abre la ventana de impresión como antes (desde ahí también se guarda en PDF)."] },
     { version: "2026.07", fecha: "Octubre 2026", titulo: "Coautoría", cambios: [
       "Rafael J. Romero de Castilla Gil, Médico de Familia, figura como coautor de la aplicación."] },
     { version: "2026.06", fecha: "Octubre 2026", titulo: "Tabla de consulta exacta para LQAS", cambios: [
@@ -735,6 +739,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
     current = c; initState(c);
     document.title = "Tamaño muestral · " + c.short;
     view.innerHTML = `
+      <div class="informe-bar informe-only"><button type="button" class="btn" data-act="volver">← Volver</button><button type="button" class="btn btn--primary" data-act="imprimir">Guardar / imprimir</button></div>
       <div class="print-only print-head"><h1>Informe de tamaño muestral</h1><p>${esc(c.title)} · ${new Date().toLocaleDateString("es-ES")}</p></div>
       <h1 class="page-title">${esc(c.title)}</h1>
       <div class="intro"><p><b>¿Qué es?</b> ${c.what}</p><p><b>¿Cuándo usarla?</b> ${c.when}</p></div>
@@ -743,7 +748,8 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       <div class="toolbar no-print">
         <button class="btn btn--primary" data-act="ejemplo">Cargar ejemplo</button>
         <button class="btn" data-act="limpiar">Restablecer</button>
-        <button class="btn" data-act="imprimir">Imprimir / Guardar PDF</button>
+        <button class="btn" data-act="informe">Ver informe</button>
+        <button class="btn" data-act="imprimir">Guardar / imprimir</button>
       </div>
       <p class="page-lead no-print" id="example-text" hidden></p>
       <div class="calc-grid">
@@ -810,7 +816,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       ${res.extraHtml || ""}
       <details class="steps"${wasOpen ? " open" : ""}><summary>Desarrollo paso a paso</summary><div class="steps-body"><ol>${stepsHtml}</ol></div></details>
       ${c.custom ? "" : paramsTable(c)}
-      <div class="toolbar no-print"><button class="btn" data-act="imprimir">Imprimir / Guardar PDF</button></div>`;
+      <div class="toolbar no-print"><button class="btn" data-act="informe">Ver informe</button><button class="btn" data-act="imprimir">Guardar / imprimir</button></div>`;
     mini.textContent = res.mini;
     const te = $("#tabla-exacta"); if (te && te.open && tablaExactaCache[tablaBeta]) pintarTablaExacta();
   }
@@ -873,14 +879,182 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       e: "32 < 33 → rojo: hay que investigar qué está pasando. La regla se fija antes y no se cambia sobre la marcha." }
   ];
 
+  // ---------- Informe en PDF (iPhone / iPad) ----------
+  // En iOS, window.print() no hace nada cuando la app está instalada en la pantalla de inicio.
+  // Solución sin librerías: se maqueta el informe a ancho de A4, se dibuja en un canvas palabra a
+  // palabra en las posiciones que calcula el propio navegador, cada página se guarda como JPEG y se
+  // empaqueta en un PDF mínimo que se ofrece en el menú Compartir de iOS (Imprimir, Guardar en Archivos…).
+  function esIOS() { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); }
+
+  function toast(msg, ms) {
+    let t = $("#toast");
+    if (!msg) { if (t) t.hidden = true; return; }
+    if (!t) { t = document.createElement("div"); t.id = "toast"; t.className = "toast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
+    t.textContent = msg; t.hidden = false; clearTimeout(toast.h);
+    if (ms) toast.h = setTimeout(() => { t.hidden = true; }, ms);
+  }
+
+  // PDF 1.4 con una imagen JPEG a página completa por página. paginas: [{ bytes, w, h }]
+  function pdfDesdeJPEGs(paginas, wPt, hPt) {
+    const enc = new TextEncoder(), partes = [], offs = []; let pos = 0;
+    const push = x => { const b = typeof x === "string" ? enc.encode(x) : x; partes.push(b); pos += b.length; };
+    const obj = (n, cuerpo) => { offs[n] = pos; push(`${n} 0 obj\n`); cuerpo(); push("\nendobj\n"); };
+    push("%PDF-1.4\n"); push(new Uint8Array([37, 226, 227, 207, 211, 10]));
+    const n = paginas.length;
+    obj(1, () => push("<< /Type /Catalog /Pages 2 0 R >>"));
+    obj(2, () => push(`<< /Type /Pages /Kids [${paginas.map((_, i) => `${3 + i * 3} 0 R`).join(" ")}] /Count ${n} >>`));
+    paginas.forEach((p, i) => {
+      const pg = 3 + i * 3, cont = pg + 1, img = pg + 2, flujo = `q ${wPt} 0 0 ${hPt} 0 0 cm /Im${i} Do Q`;
+      obj(pg, () => push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${wPt} ${hPt}] /Resources << /XObject << /Im${i} ${img} 0 R >> >> /Contents ${cont} 0 R >>`));
+      obj(cont, () => { push(`<< /Length ${flujo.length} >>\nstream\n${flujo}\nendstream`); });
+      obj(img, () => { push(`<< /Type /XObject /Subtype /Image /Width ${p.w} /Height ${p.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${p.bytes.length} >>\nstream\n`); push(p.bytes); push("\nendstream"); });
+    });
+    const total = 3 + n * 3, xref = pos;
+    let x = `xref\n0 ${total}\n0000000000 65535 f \n`;
+    for (let k = 1; k < total; k++) x += String(offs[k]).padStart(10, "0") + " 00000 n \n";
+    push(x + `trailer\n<< /Size ${total} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+    return new Blob(partes, { type: "application/pdf" });
+  }
+
+  async function generarPDF() {
+    const ANCHO = 720, K = 2;                               // ancho de maquetación (px CSS) y resolución
+    const A4W = 595.28, A4H = 841.89, MARGEN_PT = 34;      // A4 en puntos
+    const PX = (A4W - 2 * MARGEN_PT) / ANCHO;              // puntos por px CSS
+    const PW = A4W / PX, PH = A4H / PX, M = MARGEN_PT / PX, ALTO_UTIL = PH - 2 * M;
+    const hoja = document.createElement("div");
+    hoja.className = "view";
+    hoja.style.cssText = `position:absolute;left:-20000px;top:0;width:${ANCHO}px;max-width:none;margin:0;padding:0;box-shadow:none;`;
+    hoja.innerHTML = $("#view").innerHTML;
+    $$(".informe-bar, [id]", hoja).forEach(el => { if (el.classList.contains("informe-bar")) el.remove(); else el.removeAttribute("id"); });
+    $$("details", hoja).forEach(d => { d.open = true; });
+    document.body.appendChild(hoja);
+    try {
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const R0 = hoja.getBoundingClientRect();
+      const ops = [], cortes = [0], bloques = [];
+      const SIN_CORTE = ".print-head, .result-card, .interp, .warn, .note, .sem, .chart-card, .steps-body li, tr, .formula, .box, .print-foot, h1, h3, .step-t";
+      const rel = r => ({ x: r.left - R0.left, y: r.top - R0.top, w: r.width, h: r.height });
+      const hayColor = c => !!c && c !== "transparent" && !/rgba\([^)]*,\s*0\)$/.test(c);
+      const LADOS = ["Top", "Right", "Bottom", "Left"];
+      const texto = (n, cs) => {
+        const t = n.textContent, re = /\S+/g, rg = document.createRange(); let m;
+        const font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        while ((m = re.exec(t))) {
+          rg.setStart(n, m.index); rg.setEnd(n, m.index + m[0].length);
+          const rs = rg.getClientRects(); if (!rs.length) continue;
+          ops.push({ t: "txt", s: cs.textTransform === "uppercase" ? m[0].toUpperCase() : m[0], r: rel(rs[0]), font, col: cs.color, ls: cs.letterSpacing });
+        }
+      };
+      const recorre = el => {
+        const cs = getComputedStyle(el);
+        if (cs.display === "none" || cs.visibility === "hidden") return;
+        const r = rel(el.getBoundingClientRect());
+        if (r.h > 0) cortes.push(r.y + r.h);
+        if (el.matches(SIN_CORTE)) bloques.push([r.y, r.y + r.h]);
+        if (el instanceof SVGSVGElement) { ops.push({ t: "svg", el, r }); return; }
+        const bordes = LADOS.map(l => [parseFloat(cs[`border${l}Width`]) || 0, cs[`border${l}Color`]]);
+        if (hayColor(cs.backgroundColor) || bordes.some(b => b[0] > 0 && hayColor(b[1]))) ops.push({ t: "caja", r, bg: cs.backgroundColor, rad: parseFloat(cs.borderTopLeftRadius) || 0, bordes });
+        if (el.tagName === "LI") {   // los números y viñetas de las listas son pseudoelementos: se dibujan aparte
+          const ol = el.parentElement.tagName === "OL", idx = Array.prototype.indexOf.call(el.parentElement.children, el) + 1;
+          ops.push({ t: "txt", s: ol ? idx + "." : "•", r: { x: r.x - (ol ? 20 : 14), y: r.y, w: 16, h: parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.4 }, font: `normal 700 ${cs.fontSize} ${cs.fontFamily}`, col: ol ? "#0b6f66" : cs.color, ls: "normal" });
+        }
+        for (const n of el.childNodes) {
+          if (n.nodeType === 1) recorre(n);
+          else if (n.nodeType === 3 && n.textContent.trim()) texto(n, cs);
+        }
+      };
+      recorre(hoja);
+      // Gráficos SVG → imagen (con los estilos calculados copiados en línea)
+      for (const op of ops.filter(o => o.t === "svg")) {
+        const cl = op.el.cloneNode(true), orig = [op.el, ...op.el.querySelectorAll("*")], copia = [cl, ...cl.querySelectorAll("*")];
+        orig.forEach((o, i) => { const cs = getComputedStyle(o); copia[i].setAttribute("style", ["fill", "stroke", "stroke-width", "stroke-dasharray", "font-family", "font-size", "font-weight"].map(p => `${p}:${cs.getPropertyValue(p)}`).join(";")); });
+        cl.setAttribute("xmlns", "http://www.w3.org/2000/svg"); cl.setAttribute("width", op.r.w); cl.setAttribute("height", op.r.h);
+        op.img = await new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(cl)); });
+      }
+      // Saltos de página: en el borde inferior de un bloque, sin partir cajas, filas ni fórmulas
+      const alto = Math.ceil(R0.height);
+      const parte = y => bloques.some(([a, b]) => a < y - 0.5 && y + 0.5 < b && b - a < ALTO_UTIL);
+      const cands = [...new Set(cortes.map(c => Math.ceil(c)))].sort((a, b) => a - b);
+      const pags = []; let y0 = 0;
+      while (y0 < alto - 1) {
+        const lim = y0 + ALTO_UTIL;
+        if (lim >= alto) { pags.push([y0, alto]); break; }
+        const y = cands.filter(c => c > y0 + 80 && c <= lim && !parte(c)).pop() || Math.floor(lim);
+        pags.push([y0, y]); y0 = y;
+      }
+      const ponFuente = (ctx, f) => { ctx.font = "10px serif"; ctx.font = f; if (ctx.font === "10px serif") ctx.font = f.replace(/^(.*?\d+(\.\d+)?px).*$/, "$1 sans-serif"); };
+      const caja = (ctx, op) => {
+        const { x, y, w, h } = op.r, rad = Math.min(op.rad, w / 2, h / 2);
+        const camino = () => { ctx.beginPath(); if (rad > 0 && ctx.roundRect) ctx.roundRect(x, y, w, h, rad); else ctx.rect(x, y, w, h); };
+        if (hayColor(op.bg)) { ctx.fillStyle = op.bg; camino(); ctx.fill(); }
+        const [t, d, b, l] = op.bordes;
+        if (op.bordes.every(z => z[0] === t[0] && z[1] === t[1]) && t[0] > 0 && hayColor(t[1])) { ctx.strokeStyle = t[1]; ctx.lineWidth = t[0]; ctx.beginPath(); if (rad > 0 && ctx.roundRect) ctx.roundRect(x + t[0] / 2, y + t[0] / 2, w - t[0], h - t[0], Math.max(0, rad - t[0] / 2)); else ctx.rect(x + t[0] / 2, y + t[0] / 2, w - t[0], h - t[0]); ctx.stroke(); return; }
+        const lado = (z, rx, ry, rw, rh) => { if (z[0] > 0 && hayColor(z[1])) { ctx.fillStyle = z[1]; ctx.fillRect(rx, ry, rw, rh); } };
+        lado(t, x, y, w, t[0]); lado(b, x, y + h - b[0], w, b[0]); lado(l, x, y, l[0], h); lado(d, x + w - d[0], y, d[0], h);
+      };
+      const dibujaPaginas = conSVG => pags.map(([a, b]) => {
+        const cv = document.createElement("canvas"); cv.width = Math.round(PW * K); cv.height = Math.round(PH * K);
+        const ctx = cv.getContext("2d");
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.scale(K, K); ctx.translate(M, M - a);
+        ctx.beginPath(); ctx.rect(-2, a, ANCHO + 4, b - a); ctx.clip();
+        for (const op of ops) {
+          if (op.r.y >= b || op.r.y + op.r.h <= a) continue;
+          if (op.t === "caja") caja(ctx, op);
+          else if (op.t === "svg") { if (conSVG && op.img) ctx.drawImage(op.img, op.r.x, op.r.y, op.r.w, op.r.h); }
+          else {
+            ponFuente(ctx, op.font); ctx.fillStyle = op.col; ctx.textBaseline = "alphabetic";
+            if ("letterSpacing" in ctx) ctx.letterSpacing = op.ls && op.ls !== "normal" ? op.ls : "0px";
+            const mt = ctx.measureText(op.s), asc = mt.fontBoundingBoxAscent || mt.actualBoundingBoxAscent || op.r.h * 0.8, desc = mt.fontBoundingBoxDescent || mt.actualBoundingBoxDescent || op.r.h * 0.2;
+            ctx.fillText(op.s, op.r.x, op.r.y + (op.r.h - (asc + desc)) / 2 + asc);
+          }
+        }
+        const url = cv.toDataURL("image/jpeg", 0.9), bin = atob(url.slice(url.indexOf(",") + 1)), bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return { bytes, w: cv.width, h: cv.height };
+      });
+      let paginas;
+      try { paginas = dibujaPaginas(true); } catch (e) { paginas = dibujaPaginas(false); }   // si el SVG «ensucia» el canvas, sin gráfico
+      return pdfDesdeJPEGs(paginas, A4W, A4H);
+    } finally { hoja.remove(); }
+  }
+
+  // El PDF se prepara al abrir «Ver informe» en iOS, para que «Guardar / imprimir» pueda abrir el menú
+  // Compartir al instante (Safari solo lo permite justo después de que el usuario pulse).
+  let pdfListo = null;
+  function nombrePDF() { return `Informe ${current.short} ${new Date().toLocaleDateString("es-ES").replace(/\//g, "-")}.pdf`; }
+  function prepararPDF() {
+    pdfListo = null; const id = current.id;
+    setTimeout(() => { if (current && current.id === id && document.body.classList.contains("ver-informe")) generarPDF().then(b => { pdfListo = { id, blob: b }; }).catch(() => {}); }, 300);
+  }
+  async function guardarPDF() {
+    if (!document.body.classList.contains("ver-informe")) { location.hash = `#/${current.id}?informe=1`; toast("Preparando el PDF… pulsa de nuevo «Guardar / imprimir» en un momento.", 4000); return; }
+    let blob = pdfListo && pdfListo.id === current.id ? pdfListo.blob : null;
+    if (!blob) { toast("Preparando el PDF…"); try { blob = await generarPDF(); pdfListo = { id: current.id, blob }; } catch (e) { toast("No se ha podido crear el PDF.", 4000); return; } }
+    const file = new File([blob], nombrePDF(), { type: "application/pdf" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: file.name }); toast(""); }
+      catch (e) {
+        if (e && e.name === "AbortError") { toast(""); return; }
+        toast("PDF listo: pulsa otra vez «Guardar / imprimir».", 4000);   // el permiso para compartir caducó mientras se generaba
+      }
+      return;
+    }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = file.name;
+    document.body.appendChild(a); a.click(); a.remove(); toast("PDF descargado.", 3000);
+  }
+
   // ---------- Enrutado ----------
   function buildNav() {
     $("#calc-nav").innerHTML = `<a href="#/" data-r="">Inicio</a>` + CALCS.map(c => `<a href="#/${c.id}" data-r="${c.id}">${esc(c.short)}</a>`).join("");
   }
   function route() {
-    const id = (location.hash.replace(/^#\/?/, "") || "");
+    const [id, qs] = (location.hash.replace(/^#\/?/, "") || "").split("?");
     const c = CALCS.find(x => x.id === id);
+    const informe = !!c && /(^|&)informe=1(&|$)/.test(qs || "");
+    document.body.classList.toggle("ver-informe", informe);
     if (c) renderCalc(c); else renderHome();
+    if (informe) { $$("details.steps").forEach(d => { d.open = true; }); if (esIOS()) prepararPDF(); }
     $$("#calc-nav a").forEach(a => a.classList.toggle("active", a.dataset.r === (c ? c.id : "")));
     const act = $("#calc-nav a.active"); if (act && act.scrollIntoView) act.scrollIntoView({ block: "nearest", inline: "center" });
     window.scrollTo(0, 0);
@@ -935,7 +1109,9 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
         if (!matchMedia("(min-width: 900px)").matches) $("#res").scrollIntoView({ behavior: "smooth", block: "nearest" });
       } else if (a === "limpiar") {
         delete state[current.id]; initState(current); if (current.custom) renderCalc(current); else { syncInputs(); update(); } $("#example-text").hidden = true;
-      } else if (a === "imprimir") window.print();
+      } else if (a === "informe") location.hash = `#/${current.id}?informe=1`;
+      else if (a === "volver") location.hash = `#/${current.id}`;
+      else if (a === "imprimir") { if (esIOS()) guardarPDF(); else window.print(); }
       else if (a === "ver") $("#res").scrollIntoView({ behavior: "smooth", block: "start" });
       else if (a === "sortear") { const o = b.closest(".sorteo").querySelector(".sorteo-out"); o.innerHTML = sortear(b.dataset.tipo, Number(b.dataset.n), Number(b.dataset.pop)); }
     }
@@ -1021,6 +1197,8 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
     let recargando = false;
     navigator.serviceWorker.addEventListener("controllerchange", () => { if (recargando || !actualizando) return; recargando = true; location.reload(); });
   }
+
+  window.TamanoMuestral = { generarPDF };   // solo para pruebas desde la consola
 
   // ---------- Arranque ----------
   buildNav();
