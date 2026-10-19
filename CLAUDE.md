@@ -9,7 +9,7 @@ PWA estática (sin build, sin dependencias, sin CDN) de cálculo de tamaño mues
 - `index.html` — esqueleto, header, nav, modales (bienvenida y Acerca de). Script inline en `<head>` que fija `data-tema` (claro/oscuro) antes de pintar.
 - `styles.css` — tokens (claro por defecto; `html[data-tema="oscuro"]`), móvil primero (360 px), layout 2 columnas >= 900 px, bloque `@media print` para el informe.
 - `stats.js` — funciones PURAS (sin DOM). `window.Stats` en navegador y `module.exports` en Node.
-- `app.js` — definición declarativa de calculadoras (`CALCS`: campos, ayudas, ejemplo, `compute(v)` que devuelve resultado, avisos y pasos), render, eventos, enrutado por hash (`#/proporcion`, `#/media`, `#/dos-proporciones`, `#/dos-medias`, `#/lqas`, `#/estratos`, `#/compuesto`, `#/concordancia`; `?informe=1` = vista de informe; `?d=<JSON>` = cargar datos desde un enlace), tema, modales. Todo cálculo se delega en `Stats`.
+- `app.js` — definición declarativa de calculadoras (`CALCS`: campos, ayudas, ejemplo, `compute(v)` que devuelve resultado, avisos y pasos), render, eventos, enrutado por hash (`#/proporcion`, `#/media`, `#/dos-proporciones`, `#/dos-medias`, `#/lqas`, `#/estratos`, `#/conglomerados`, `#/compuesto`, `#/concordancia`, `#/glosario` (página, no calculadora); `?informe=1` = vista de informe; `?d=<JSON>` = cargar datos desde un enlace), tema, modales. Todo cálculo se delega en `Stats`.
 - `sw.js` — network-first con caché de respaldo. Subir `CACHE_NAME` al cambiar archivos. Aviso de actualización (ver §6).
 - `tests/stats.test.mjs` — `node tests/stats.test.mjs`.
 
@@ -28,6 +28,9 @@ z = cuantil normal (Acklam + un paso de Halley, error < 1e-9; erfc propia). Siem
 8. Kappa de Cohen 2×2 (`Stats.kappa`): po, pe, κ = (po − pe)/(1 − pe), ee aproximado de Cohen √(po(1−po)/(n(1−pe)²)), PABAK = 2po − 1. Interpretación de Landis y Koch (1977). Aviso de paradoja con prevalencia ≥ 85 % o ≤ 15 %.
 9. Reparto por estratos (`Stats.allocate`): proporcional o igual; redondeo por restos mayores, suma exacta n y sin superar ningún estrato.
 
+10. Conglomerados (`Stats.clusterSample`): DEFF = 1 + (m − 1)·ICC (Kish); n ajustado = ceil(n·DEFF); conglomerados k = ceil(n ajustado / m).
+11. RR/OR en dos proporciones: p₂ = RR·p₁; p₂ = OR·p₁ / (1 − p₁ + OR·p₁) (`Stats.p2DesdeRR`, `Stats.p2DesdeOR`). Se informa siempre del RR y la OR equivalentes.
+
 ## 4. Decisiones
 - Los porcentajes se introducen en % y se convierten a proporciones en `compute`; los textos de desarrollo muestran las proporciones sustituidas.
 - LQAS con N: la regla (d) se aplica a n casos evaluables; las pérdidas solo aumentan los casos a seleccionar (limitado a N). Con N conocido se avisa de la n binomial equivalente. Si K_L = K_U tras redondear, se pide separar umbrales.
@@ -45,6 +48,8 @@ z = cuantil normal (Acklam + un paso de Halley, error < 1e-9; erfc propia). Siem
 - Calculadoras `custom` (compuesto, estratos): `formHtml`, `defaults`, `newRow`, `example`; eventos genéricos `.cmp-in` (con `data-row` → fila; sin él → clave de primer nivel) y `cmp-add`/`cmp-del`.
 - «Compartir enlace»: `enlaceActual()` serializa el estado en `#/id?d=`; `cargarDesdeEnlace()` solo acepta claves conocidas, textos ≤ 200 caracteres y ≤ 50 filas, y luego limpia la dirección con `history.replaceState`. Todo lo que procede del enlace se pinta con `esc()` (probado con un nombre con HTML: no se ejecuta).
 - Instalar: bloque en «Acerca de» con instrucciones iPhone/Android/ordenador y botón «Instalar ahora» si el navegador lanza `beforeinstallprompt`; si ya está instalada se indica.
+- Campos condicionales: `showIf(st)` en la definición del campo; `syncInputs` oculta/muestra `.field[data-field]` y `paramsTable` omite los ocultos (usado en RR/OR).
+- Glosario: array `GLOSARIO` [término, definición, id de calculadora]; búsqueda sin tildes. Fuera de alcance por decisión con el autor: correlación y supervivencia (poco útiles en auditoría).
 - Sorteo de casos (`sorteoHtml`/`sortear`) en proporción, media y LQAS cuando se conoce N: aleatorio simple o sistemático (k = N/n, arranque al azar). Usa Math.random (suficiente para elegir historias).
 - `compute` devuelve `warns` (⚠ ámbar: algo dudoso en los datos) y `notes` (ℹ verde azulado: información, p. ej. n binomial equivalente, redondeo de K, zona gris, z frente a t). No mezclar.
 - Dos medias usa z (63 por grupo en el caso de referencia); `power.t.test` de R, con t, da 64. Se explica en una nota.

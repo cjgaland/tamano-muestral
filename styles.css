@@ -285,6 +285,16 @@ body.ver-informe .an-vacio { display: none; }
 #instalar-bloque.instalada .instalada-msg { display: block; }
 #instalar-bloque.instalada .instalar-lista, #instalar-bloque.instalada .instalar-lista + p { display: none; }
 
+/* ---------- Glosario ---------- */
+.glos-buscar { margin: 12px 0 4px; }
+.glos-buscar input { flex: 1; min-width: 0; padding: 12px 14px; border: 0; outline: 0; background: transparent; color: var(--text-1); font: 600 16px var(--font); }
+.glos-lista { margin: 8px 0 0; display: grid; gap: 8px; }
+.glos-item { padding: 10px 14px; border-radius: var(--radius); background: var(--bg-2); border: 1px solid var(--border); }
+.glos-item dt { font-weight: 800; color: var(--text-1); }
+.glos-item dd { margin: 3px 0 0; color: var(--text-2); font-size: 14.5px; }
+.glos-link { white-space: nowrap; font-weight: 700; color: var(--cyan); text-decoration: none; }
+.glos-portada { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 18px 0 0; padding: 12px 14px; border-radius: var(--radius-lg); border: 1.5px solid var(--cyan); background: var(--cyan-dim); color: var(--text-1); text-decoration: none; }
+
 /* ---------- Sorteo ---------- */
 .sorteo .toolbar { margin: 8px 0 0; }
 .sorteo-nums { font: 600 15px var(--mono); line-height: 1.7; margin: 10px 0 4px; padding: 8px 10px; background: var(--bg-3); border-radius: 8px; border: 1px solid var(--border); }

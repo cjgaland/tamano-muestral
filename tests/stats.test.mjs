@@ -127,4 +127,13 @@ t("reparto: suma exacta y nunca más que el estrato", () => {
   }
 });
 
+console.log("\n10. Conglomerados y RR/OR");
+t("efecto de diseño: n 97, 10 por planta, ICC 0,05 → DEFF 1,45, 141 historias, 15 plantas", () => { const r = S.clusterSample(97, 10, 0.05); close(r.deff, 1.45, 1e-12); assert.equal(r.nAdj, 141); assert.equal(r.k, 15); assert.equal(r.total, 150); });
+t("efecto de diseño: con ICC 0 o 1 caso por conglomerado no cambia n", () => { assert.equal(S.clusterSample(97, 10, 0).nAdj, 97); assert.equal(S.clusterSample(97, 1, 0.3).nAdj, 97); });
+t("RR 0,5 con p1 40 % → p2 20 %; OR 2,25 con p1 40 % → p2 60 %", () => { close(S.p2DesdeRR(0.4, 0.5), 0.2, 1e-12); close(S.p2DesdeOR(0.4, 2.25), 0.6, 1e-12); });
+t("OR equivalente a 40 % → 60 % da los mismos 97 por grupo", () => {
+  const r = S.twoProportions({ p1: 0.4, p2: S.p2DesdeOR(0.4, 2.25), alpha: 0.05, power: 0.8, k: 1, sides: 2, fleiss: false, loss: 0 });
+  assert.equal(r.n1, 97);
+});
+
 console.log(`\n${ok} pruebas superadas.`);

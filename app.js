@@ -10,8 +10,12 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.11";
+  const APP_VERSION = "2026.12";
   const NOVEDADES = [
+    { version: "2026.12", fecha: "Octubre 2026", titulo: "Glosario, conglomerados y RR/OR", cambios: [
+      "Glosario con 50 términos explicados en lenguaje llano, con buscador y enlaces a cada calculadora (en el menú y en la portada).",
+      "Nueva calculadora de muestreo por conglomerados: cuánta muestra más hace falta al sortear plantas o centros y revisar varias historias en cada uno (efecto de diseño), y cuántos sortear.",
+      "«2 porcentajes»: el efecto esperado se puede dar también como riesgo relativo (RR) u odds ratio (OR), y siempre se muestra su equivalencia."] },
     { version: "2026.11", fecha: "Octubre 2026", titulo: "Analizar resultados, kappa y estratos", cambios: [
       "«Ya tengo los resultados»: en LQAS escribe cuántas historias cumplen y la app te da el semáforo verde o rojo, la frase para el informe y lo que no debes escribir. Si los resultados ya deciden antes de terminar, te avisa de que puedes parar.",
       "En «Un porcentaje», el resultado con su horquilla de error (método de Wilson) y, si quieres, la comparación con un estándar.",
@@ -400,10 +404,16 @@
         <div class="box box--ejemplo"><span class="box-tag">Ejemplo resuelto</span>
           <p>Una campaña de higiene de manos quiere subir la adherencia del 40 % al 60 %. Con α = 5 % y potencia 80 % hacen falta <b>97 observaciones antes y 97 después</b>.</p>
           <p>Para demostrar una subida del 40 % al 50 % harían falta <b>388 por grupo</b>, y del 40 % al 45 %, <b>1.534 por grupo</b>. Cuanto más pequeña es la mejora que quieres demostrar, muchísimos más casos.</p></div>
+        <h3>¿Y si el efecto viene como riesgo relativo u odds ratio?</h3>
+        <p>Muchos artículos dan el efecto como <b>riesgo relativo (RR)</b> («la intervención reduce las infecciones a la mitad»: RR = 0,5) o como <b>odds ratio (OR)</b>. Elige esa opción en «Cómo expresas el efecto» y escribe el valor: la app calcula el porcentaje del grupo 2 a partir del grupo 1. Por ejemplo, con un 40 % de partida, una OR de 2,25 equivale a pasar al 60 % (97 por grupo, igual que antes).</p>
         <div class="box box--trampa"><span class="box-tag">Ojo, trampa</span><p><b>«No hemos demostrado mejora» no es lo mismo que «no hay mejora».</b> Con 30 casos por grupo solo se ven cambios enormes: la campaña pudo funcionar y la muestra ser demasiado pequeña para notarlo.</p></div>`,
       fields: [
         { id: "p1", label: "Proporción esperada en el grupo 1 (p₁)", unit: "%", def: "", ph: "p. ej. 40", help: "Porcentaje esperado en el grupo de referencia (p. ej. cumplimiento actual o «antes»), según datos previos o un piloto." },
-        { id: "p2", label: "Proporción esperada en el grupo 2 (p₂)", unit: "%", def: "", ph: "p. ej. 60", help: "Porcentaje que esperas lograr (o la menor diferencia que sería relevante). Cuanto más cerca de p₁, mucha más muestra." },
+        { id: "efecto", label: "Cómo expresas el efecto esperado", type: "seg", def: "p2", options: [["p2", "% del grupo 2"], ["rr", "Riesgo relativo"], ["or", "Odds ratio"]],
+          help: "Lo habitual en auditoría es dar el porcentaje esperado en el grupo 2. Si el efecto lo tienes de un artículo como riesgo relativo (RR) u odds ratio (OR), elige esa opción y la app calcula p₂ a partir de p₁." },
+        { id: "efv", label: "Valor del RR u OR esperado", def: "", ph: "p. ej. 0,5", quick: [0.5, 0.75, 1.5, 2], showIf: st => st.efecto === "rr" || st.efecto === "or",
+          help: "Riesgo relativo (RR) = p₂ ÷ p₁: con RR = 0,5 el riesgo se reduce a la mitad; con RR = 2 se duplica. Odds ratio (OR) = (p₂/(1−p₂)) ÷ (p₁/(1−p₁)): es la medida de muchos estudios de casos y controles; se parece al RR solo cuando los porcentajes son pequeños. 1 = sin efecto." },
+        { id: "p2", showIf: st => !st.efecto || st.efecto === "p2", label: "Proporción esperada en el grupo 2 (p₂)", unit: "%", def: "", ph: "p. ej. 60", help: "Porcentaje que esperas lograr (o la menor diferencia que sería relevante). Cuanto más cerca de p₁, mucha más muestra." },
         F_ALPHA, F_SIDES, F_POWER, F_K,
         { id: "fleiss", label: "Corrección de continuidad (Fleiss)", type: "check", def: false,
           help: "Aumenta algo el tamaño y es más prudente si vas a analizar con el test χ² con corrección de continuidad o con el test exacto de Fisher. No es necesaria en el resto de casos." },
@@ -414,8 +424,19 @@
       compute(v) {
         const E = [];
         R(E, v, "p1", "p₁", 0, 100, false, false);
-        R(E, v, "p2", "p₂", 0, 100, false, false);
-        if (!E.length && v.p1 === v.p2) E.push({ f: "p2", m: "p₁ y p₂ no pueden ser iguales: no habría diferencia que detectar." });
+        const modo = v.efecto || "p2";
+        if (modo === "p2") {
+          R(E, v, "p2", "p₂", 0, 100, false, false);
+          if (!E.length && v.p1 === v.p2) E.push({ f: "p2", m: "p₁ y p₂ no pueden ser iguales: no habría diferencia que detectar." });
+        } else {
+          R(E, v, "efv", modo === "rr" ? "Riesgo relativo" : "Odds ratio", 0, 1e4, false, false);
+          if (!E.length && v.efv === 1) E.push({ f: "efv", m: "Un valor de 1 significa «sin efecto»: no habría diferencia que detectar." });
+          if (!E.length) {
+            const q = modo === "rr" ? S.p2DesdeRR(v.p1 / 100, v.efv) : S.p2DesdeOR(v.p1 / 100, v.efv);
+            if (!(q > 0 && q < 1)) E.push({ f: "efv", m: `Con p₁ = ${nf(v.p1)} %, un riesgo relativo de ${nf(v.efv)} daría un p₂ igual o mayor que 100 %: no es posible.` });
+            else v.p2 = q * 100;
+          }
+        }
         R(E, v, "alpha", "α", 0, 50, false, false);
         R(E, v, "power", "Potencia", 50, 100, false, false);
         R(E, v, "k", "Razón k", 0.1, 10, true, true);
@@ -424,6 +445,8 @@
         const p1 = v.p1 / 100, p2 = v.p2 / 100, alpha = v.alpha / 100, power = v.power / 100, L = v.loss / 100, k = v.k, sides = v.sides === "1" ? 1 : 2;
         const r = S.twoProportions({ p1, p2, alpha, power, k, sides, fleiss: !!v.fleiss, loss: L });
         const steps = [];
+        if (modo === "rr") steps.push({ t: "De riesgo relativo a p₂", f: ["p₂ = RR × p₁", `p₂ = ${nf(v.efv, 4)} × ${nf(p1, 4)} = ${nfix(p2, 4)}`] });
+        if (modo === "or") steps.push({ t: "De odds ratio a p₂", f: ["p₂ = OR·p₁ / (1 − p₁ + OR·p₁)", `p₂ = ${nf(v.efv, 4)}·${nf(p1, 4)} / (1 − ${nf(p1, 4)} + ${nf(v.efv, 4)}·${nf(p1, 4)}) = ${nfix(p2, 4)}`] });
         steps.push({ t: "Proporción media ponderada", f: ["p̄ = (p₁ + k·p₂) / (1 + k)", `p̄ = (${nf(p1, 4)} + ${nf(k, 4)}·${nf(p2, 4)}) / (1 + ${nf(k, 4)}) = ${nfix(r.pbar, 4)}`, `q̄ = 1 − p̄ = ${nfix(r.qbar, 4)}`] });
         steps.push({ t: "Valores críticos", f: [sides === 1 ? `z_α = z(1 − α) = z(${nf(1 - alpha, 4)}) = ${nfix(r.za, 4)}   (unilateral)` : `z_α = z(1 − α/2) = z(${nf(1 - alpha / 2, 4)}) = ${nfix(r.za, 4)}   (bilateral)`, `z_β = z(potencia) = z(${nf(power, 4)}) = ${nfix(r.zb, 4)}`] });
         steps.push({ t: "Tamaño del grupo 1", f: [
@@ -433,7 +456,9 @@
         if (v.fleiss) steps.push({ t: "Corrección de continuidad (Fleiss)", f: ["n₁' = (n₁/4)·(1 + √(1 + 2(k+1) / (k·n₁·|p₁−p₂|)))²", `n₁' = (${nfix(r.n1raw, 2)}/4)·(1 + √(1 + 2·${nf(k + 1, 4)} / (${nf(k, 4)}·${nfix(r.n1raw, 2)}·${nf(Math.abs(r.diff), 4)})))² = ${nfix(r.n1c, 2)}`] });
         steps.push({ t: "Redondeo hacia arriba y tamaño del grupo 2", f: [`n₁ = ${r.n1}`, `n₂ = k · n₁ = ${nf(k, 4)} · ${nfix(v.fleiss ? r.n1c : r.n1raw, 2)} → ${r.n2}`] });
         if (L > 0) steps.push({ t: "Ajuste por pérdidas", f: ["n_final = n / (1 − pérdidas)", `n₁ final = ${r.n1} / (1 − ${nf(L, 4)}) → ${r.n1Final}`, `n₂ final = ${r.n2} / (1 − ${nf(L, 4)}) → ${r.n2Final}`] });
-        const warns = [];
+        const warns = [], notes = [];
+        const rrEq = p2 / p1, orEq = (p2 / (1 - p2)) / (p1 / (1 - p1));
+        notes.push(`Este efecto equivale a un riesgo relativo de <b>${nfix(rrEq, 2)}</b> y a una odds ratio de <b>${nfix(orEq, 2)}</b> (p₁ = ${nf(p1 * 100, 1)} %, p₂ = ${nf(p2 * 100, 1)} %).`);
         if (Math.abs(r.diff) < 0.05) warns.push("La diferencia a detectar es menor de 5 puntos: el tamaño necesario será muy grande. Valora si una diferencia tan pequeña es clínicamente relevante.");
         if (p1 < 0.05 || p1 > 0.95 || p2 < 0.05 || p2 > 0.95) warns.push("Con proporciones muy cercanas a 0 % o 100 % la aproximación normal es poco fiable; considera métodos exactos.");
         if (sides === 1) warns.push("Contraste unilateral: solo es defendible si se decidió antes del estudio y una diferencia en el sentido contrario carece de interés.");
@@ -445,7 +470,7 @@
           big: { label: grupos ? "Casos necesarios por grupo" : "Casos necesarios en el grupo 1", value: nf(r.n1Final, 0), sub: grupos ? `Total: ${nf(tot, 0)} casos (2 grupos)` : `Grupo 2: ${nf(r.n2Final, 0)} · Total: ${nf(tot, 0)}` },
           extras: [["Grupo 1", nf(r.n1Final, 0)], ["Grupo 2", nf(r.n2Final, 0)], ["Total", nf(tot, 0)], L > 0 ? ["Sin pérdidas (total)", nf(r.n1 + r.n2, 0)] : null].filter(Boolean),
           interp: `Con <b>${nf(r.n1Final, 0)}</b> casos en el grupo 1 y <b>${nf(r.n2Final, 0)}</b> en el grupo 2, tendrás una probabilidad del <b>${nf(v.power)} %</b> de detectar como significativa (α = ${nf(v.alpha)} %, ${sides === 1 ? "unilateral" : "bilateral"}) una diferencia real entre ${nf(v.p1)} % y ${nf(v.p2)} %. Si el efecto real es menor, la potencia será menor.`,
-          warns, steps, mini: nf(r.n1Final, 0) + " + " + nf(r.n2Final, 0)
+          warns, notes, steps, mini: nf(r.n1Final, 0) + " + " + nf(r.n2Final, 0)
         };
       }
     },
@@ -719,6 +744,70 @@
       }
     },
 
+    // ===================== MUESTREO POR CONGLOMERADOS (EFECTO DE DISEÑO) =====================
+    {
+      id: "conglomerados", short: "Conglomerados", title: "Muestreo por conglomerados (efecto de diseño)",
+      q: "¿Vas a sortear plantas, centros o consultas y revisar varias historias en cada uno?",
+      a: "Calculadora de <b>muestreo por conglomerados</b> (efecto de diseño)",
+      what: "Ajusta el tamaño de muestra cuando no sorteas historias sueltas, sino <b>grupos</b> (plantas, centros de salud, consultas, días) y revisas varias historias dentro de cada grupo. Te dice cuántas historias más necesitas y cuántos grupos sortear.",
+      when: "Úsala cuando revisar historias sueltas de todo el área no es práctico y prefieres ir a unos pocos sitios y revisar varias en cada uno. Primero calcula n con <a href=\"#/proporcion\">Un porcentaje</a> (como si fuera un sorteo de historias sueltas) y luego ajústalo aquí.",
+      idea: "Diez historias de la <b>misma planta</b> se parecen entre sí (mismo equipo, mismas costumbres, mismos impresos): aportan menos información que diez historias de diez plantas distintas. Es como preguntar la opinión a diez personas de la misma familia: no equivale a preguntar a diez familias.",
+      facil: `
+        <h3>Los datos, explicados sin estadística</h3>
+        <ul>
+          <li><b>n</b>: el tamaño que te ha dado otra calculadora, como si sortearas historias sueltas (con las pérdidas ya incluidas).</li>
+          <li><b>m</b>: cuántas historias vas a revisar en cada conglomerado (planta, centro, consulta…).</li>
+          <li><b>ICC</b> (correlación intraclase): cuánto se parecen entre sí los casos de un mismo conglomerado, de 0 (nada) a 1 (son idénticos). En indicadores de proceso entre unidades o centros suele estar entre <b>0,01 y 0,15</b>. Si no lo conoces, prueba con 0,05 y con 0,10 para ver cuánto cambia.</li>
+        </ul>
+        <p class="formula">Efecto de diseño = 1 + (m − 1) × ICC        n ajustado = n × efecto de diseño</p>
+        <div class="box box--ejemplo"><span class="box-tag">Ejemplo resuelto</span>
+          <p>Para estimar un porcentaje con ±10 % hacían falta <b>97 historias</b> sueltas. Si en lugar de eso sorteamos plantas y revisamos <b>10 historias en cada una</b>, con un ICC de 0,05:</p>
+          <p class="formula">Efecto de diseño = 1 + 9 × 0,05 = 1,45        97 × 1,45 = 140,65 → 141 historias</p>
+          <p>141 ÷ 10 = 14,1 → hay que sortear <b>15 plantas</b> y revisar 10 historias en cada una (150 en total).</p></div>
+        <div class="box box--practica"><span class="box-tag">En la práctica</span><p>Mejor <b>muchos conglomerados con pocas historias</b> cada uno que pocos con muchas: con m = 5 el efecto de diseño es menor que con m = 20. Y los conglomerados también se tienen que <b>sortear</b>.</p></div>
+        <div class="box box--trampa"><span class="box-tag">Ojo, trampa</span><p>Si quieres una <b>decisión para cada planta</b> («¿alcanza el estándar esta unidad?»), esto no es lo tuyo: haz un <a href="#/lqas">LQAS</a> por unidad. Los conglomerados sirven para una cifra global del área o del hospital.</p></div>`,
+      fields: [
+        { id: "n", label: "Tamaño de muestra sin conglomerados (n)", unit: "casos", def: "", ph: "p. ej. 97",
+          help: "El número de casos que te ha dado otra calculadora (por ejemplo, Un porcentaje) suponiendo que sorteas historias sueltas. Si ya incluye pérdidas, no hace falta volver a sumarlas." },
+        { id: "m", label: "Casos a revisar en cada conglomerado (m)", unit: "casos", def: "10", quick: [5, 10, 20],
+          help: "Cuántas historias revisarás en cada planta, centro o consulta sorteada. Cuantas menos por conglomerado (y más conglomerados), menor es la penalización." },
+        { id: "icc", label: "Correlación intraclase (ICC)", def: "0,05", quick: [0.01, 0.05, 0.1, 0.15],
+          help: "Cuánto se parecen entre sí los casos de un mismo conglomerado, de 0 a 1. En indicadores de proceso entre unidades o centros suele estar entre 0,01 y 0,15. Si no lo conoces, prueba 0,05 y 0,10. Puedes estimarlo con datos de una auditoría anterior." },
+        { id: "M", label: "Conglomerados disponibles", unit: "conglomerados", opt: true, def: "", ph: "opcional",
+          help: "Cuántas plantas, centros o consultas hay en total para sortear. Si lo indicas, la app comprueba que hay suficientes y puede sortear cuáles visitar." }
+      ],
+      example: { n: "97", m: "10", icc: "0,05", M: "24" },
+      exampleText: "Ejemplo: se querían 97 historias para estimar un porcentaje con ±10 %. En vez de sortear historias sueltas de todo el hospital, se sortean plantas (hay 24) y se revisan 10 historias en cada una.",
+      compute(v) {
+        const E = [];
+        R(E, v, "n", "Tamaño de muestra n", 1, 1e7, true, true);
+        if (!E.length && !Number.isInteger(v.n)) E.push({ f: "n", m: "El tamaño de muestra debe ser un número entero." });
+        R(E, v, "m", "Casos por conglomerado m", 1, 1e5, true, true);
+        if (!E.some(e => e.f === "m") && !Number.isInteger(v.m)) E.push({ f: "m", m: "Los casos por conglomerado deben ser un número entero." });
+        R(E, v, "icc", "ICC", 0, 1, true, true);
+        if (v.M !== null && (Number.isNaN(v.M) || v.M < 1 || !Number.isInteger(v.M))) E.push({ f: "M", m: "Los conglomerados disponibles deben ser un número entero (o déjalo vacío)." });
+        if (E.length) return { errors: E };
+        const r = S.clusterSample(v.n, v.m, v.icc), M = v.M || 0;
+        const steps = [
+          { t: "Efecto de diseño (DEFF)", f: ["DEFF = 1 + (m − 1) × ICC", `DEFF = 1 + (${nf(v.m, 0)} − 1) × ${nf(v.icc, 4)} = ${nfix(r.deff, 3)}`], note: "Cuánto «vale menos» cada historia por estar agrupada con otras parecidas. Con DEFF = 1,5 hacen falta un 50 % más de historias." },
+          { t: "Tamaño ajustado", f: ["n ajustado = n × DEFF", `n ajustado = ${nf(v.n, 0)} × ${nfix(r.deff, 3)} = ${nfix(v.n * r.deff, 2)} → ${r.nAdj}`] },
+          { t: "Número de conglomerados", f: ["k = n ajustado ÷ m", `k = ${r.nAdj} ÷ ${nf(v.m, 0)} = ${nfix(r.nAdj / v.m, 2)} → ${r.k}`, `Total a revisar = k × m = ${r.k} × ${nf(v.m, 0)} = ${r.total}`], note: "Se redondea hacia arriba para no quedarse corto." }
+        ];
+        const warns = [], notes = [];
+        if (M && r.k > M) warns.push(`Harían falta ${r.k} conglomerados y solo hay ${M}: revisa más historias en cada uno (sube m) o considera revisar todos los conglomerados.`);
+        if (r.k < 5) warns.push("Con menos de 5 conglomerados el resultado depende demasiado de qué sitios salgan en el sorteo: mejor más conglomerados con menos historias cada uno.");
+        if (v.icc > 0.3) warns.push("Un ICC mayor de 0,3 es muy alto: los casos de un mismo sitio serían casi iguales. Comprueba el valor.");
+        if (v.m >= 20 && v.icc >= 0.05) notes.push(`Con ${nf(v.m, 0)} historias por conglomerado la penalización es grande. Prueba con m = 5: el efecto de diseño bajaría a ${nfix(1 + 4 * v.icc, 2)}.`);
+        notes.push("El ICC casi nunca se conoce con exactitud: compara el resultado con un ICC algo mayor para ver si el plan sigue siendo viable.");
+        return {
+          big: { label: "Conglomerados a sortear", value: nf(r.k, 0), sub: `con ${nf(v.m, 0)} casos en cada uno · ${nf(r.total, 0)} casos en total` },
+          extras: [["Efecto de diseño", nfix(r.deff, 2)], ["n ajustado", nf(r.nAdj, 0)], ["n sin conglomerados", nf(v.n, 0)]],
+          interp: `Como las historias de un mismo sitio se parecen entre sí, en lugar de ${nf(v.n, 0)} historias sueltas necesitas <b>${nf(r.nAdj, 0)}</b> (un ${nf((r.deff - 1) * 100, 0)} % más). Sortea <b>${nf(r.k, 0)} conglomerados</b> y revisa <b>${nf(v.m, 0)}</b> historias elegidas al azar en cada uno.`,
+          warns, notes, steps, mini: `${nf(r.k, 0)} × ${nf(v.m, 0)}`, extraHtml: M ? sorteoHtml(Math.min(r.k, M), M, "conglomerados") : ""
+        };
+      }
+    },
+
     // ===================== 6. INDICADOR COMPUESTO =====================
     // No calcula un tamaño de muestra: resume los resultados de una auditoría con varios criterios.
     // Porcentaje simple (Saturno, UT19): Σ cumplimientos ÷ Σ oportunidades.
@@ -927,10 +1016,10 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
   }
 
   // ---------- Sorteo de casos (muestreo aleatorio simple o sistemático) ----------
-  function sorteoHtml(n, N) {
+  function sorteoHtml(n, N, unidad = "casos") {
     if (!N) return `<div class="chart-card sorteo no-print"><h3>¿Cómo elijo los casos al azar?</h3><p>Si indicas el tamaño de la población o del lote (N), la app puede sortear por ti qué casos revisar. Si no, numera el listado y sortea con la función ALEATORIO.ENTRE de una hoja de cálculo.</p></div>`;
     const m = Math.min(n, N);
-    return `<div class="chart-card sorteo no-print"><h3>Sortear qué casos revisar</h3><p>Numera el listado del 1 al ${nf(N, 0)} (por ejemplo, por orden de fecha) y pulsa un botón. Sale una lista de ${nf(m, 0)} números distintos: esos son los casos a revisar. Es la «cucharada bien removida».</p>
+    return `<div class="chart-card sorteo no-print"><h3>Sortear qué casos revisar</h3><p>Numera el listado del 1 al ${nf(N, 0)} (por ejemplo, por orden de fecha) y pulsa un botón. Sale una lista de ${nf(m, 0)} números distintos: esos son los ${unidad} a revisar. Es la «cucharada bien removida».</p>
 <div class="toolbar"><button class="btn btn--primary" type="button" data-act="sortear" data-tipo="simple" data-n="${m}" data-pop="${N}">Sorteo aleatorio simple</button><button class="btn" type="button" data-act="sortear" data-tipo="sist" data-n="${m}" data-pop="${N}">Muestreo sistemático</button></div>
 <div class="sorteo-out" aria-live="polite"></div></div>`;
   }
@@ -977,14 +1066,14 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
     let body = "";
     if (f.type === "seg") {
       body = `<div class="seg" data-seg="${f.id}">${f.options.map(o => `<button type="button" data-v="${o[0]}">${o[1]}</button>`).join("")}</div>`;
-      return `<div class="field">${hdr}${body}</div>`;
+      return `<div class="field" data-field="${f.id}">${hdr}${body}</div>`;
     }
     if (f.type === "check") {
-      return `<div class="field"><div class="field-head"><label class="check"><input type="checkbox" data-chk="${f.id}" /> ${esc(f.label)}</label><button type="button" class="info-btn" data-info="${f.id}" aria-expanded="false" aria-label="Ayuda">i</button></div><p class="help" id="help-${f.id}" hidden>${esc(f.help)}</p></div>`;
+      return `<div class="field" data-field="${f.id}"><div class="field-head"><label class="check"><input type="checkbox" data-chk="${f.id}" /> ${esc(f.label)}</label><button type="button" class="info-btn" data-info="${f.id}" aria-expanded="false" aria-label="Ayuda">i</button></div><p class="help" id="help-${f.id}" hidden>${esc(f.help)}</p></div>`;
     }
     body = `<div class="input-wrap" data-wrap="${f.id}"><input class="fld-input" data-id="${f.id}" type="text" inputmode="decimal" autocomplete="off" placeholder="${esc(f.ph || "")}" aria-label="${esc(f.label)}" />${f.unit ? `<span class="input-unit">${esc(f.unit)}</span>` : ""}</div>`;
     if (f.quick) body += `<div class="quick">${f.quick.map(q => { const val = typeof q === "object" ? q.v : q; return `<button type="button" class="chip${typeof q === "object" && q.accent ? " chip--accent" : ""}" data-q="${f.id}" data-v="${val}">${esc(chipLabel(q, f))}</button>`; }).join("")}</div>`;
-    return `<div class="field">${hdr}${body}</div>`;
+    return `<div class="field" data-field="${f.id}">${hdr}${body}</div>`;
   }
 
   const KEY_FACIL = "tammuestral-facil-abierto";
@@ -1031,6 +1120,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       else { const i = $(`.fld-input[data-id="${f.id}"]`); if (i && document.activeElement !== i) i.value = st[f.id]; }
     });
     syncChips();
+    c.fields.forEach(f => { if (f.showIf) { const el = $(`.field[data-field="${f.id}"]`); if (el) el.hidden = !f.showIf(st); } });
   }
   function syncChips() {
     const st = state[current.id];
@@ -1039,7 +1129,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
 
   function paramsTable(c) {
     const st = state[c.id];
-    const rows = c.fields.map(f => {
+    const rows = c.fields.filter(f => !f.showIf || f.showIf(st)).map(f => {
       let val;
       if (f.type === "seg") val = (f.options.find(o => o[0] === st[f.id]) || [])[1];
       else if (f.type === "check") val = st[f.id] ? "Sí" : "No";
@@ -1092,6 +1182,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
         <div class="box box--practica"><span class="box-tag">La pregunta que lo cambia todo: ¿estimar o decidir?</span><p><b>Estimar</b> es pesar el paquete en una báscula de precisión: tarda más y da un número («el 78 % cumple, ±10 %»). <b>Decidir</b> es pasar por el arco del aeropuerto: no dice cuánto metal llevas, solo pita o no pita («alcanza el estándar / hay que investigar»). Para muchas auditorías, con el arco basta: es <b>LQAS</b>, y necesita muchos menos casos.</p></div>
       </div>
       <div class="guide">${CALCS.map((c, i) => `<a class="guide-card" href="#/${c.id}"><span class="guide-num">${i + 1}</span><span><div class="guide-q">${esc(c.q)}</div><div class="guide-a">→ ${c.a}</div></span><span class="guide-go">›</span></a>`).join("")}</div>
+      <a class="glos-portada" href="#/glosario"><span><b>Glosario</b> · ${GLOSARIO.length} términos explicados en lenguaje llano, con buscador</span><span class="guide-go">›</span></a>
       <div class="glossary"><details class="gloss"><summary>Conceptos clave en 1 minuto</summary><dl class="gloss-body">
         <dt>Confianza (1 − α)</dt><dd>Seguridad con que el intervalo contiene el valor real. 95 % es lo habitual.</dd>
         <dt>Precisión (e)</dt><dd>Mitad de la anchura del intervalo: el «±» que toleras.</dd>
@@ -1306,6 +1397,77 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
     document.body.appendChild(a); a.click(); a.remove(); toast("PDF descargado.", 3000);
   }
 
+  // ---------- Glosario ----------
+  // [término, definición en lenguaje llano, calculadora relacionada (id) o ""]
+  const GLOSARIO = [
+    ["Aleatorio (muestreo)", "Forma de elegir los casos en la que todos tienen la misma probabilidad de salir, como en un sorteo. Es la «cucharada bien removida»: sin azar, la muestra puede no parecerse a la realidad.", ""],
+    ["Bilateral / unilateral (contraste)", "Bilateral: te interesa detectar una diferencia en cualquier sentido (lo habitual y más prudente). Unilateral: solo en un sentido (por ejemplo, solo mejora); debe decidirse antes del estudio y pide menos muestra.", "dos-proporciones"],
+    ["Binomial (distribución)", "Modelo que describe cuántos casos «cumplen» en una muestra cuando la población es muy grande o de tamaño desconocido. Lo usa LQAS cuando no indicas N.", "lqas"],
+    ["Censo", "Revisar todos los casos de la población, sin muestra. Es lo indicado para los indicadores centinela o cuando la población es muy pequeña.", ""],
+    ["Concordancia", "Grado en que dos auditoras que revisan las mismas historias llegan a la misma conclusión. Se mide con el kappa.", "concordancia"],
+    ["Confianza (nivel de)", "Seguridad con la que la horquilla calculada contiene el valor real. Con un 95 %, de cada 100 estudios hechos igual, en 95 acertaríamos.", "proporcion"],
+    ["Conglomerado", "Grupo natural de casos (una planta, un centro de salud, una consulta, un día) que se sortea entero para revisar varias historias dentro de él.", "conglomerados"],
+    ["Conveniencia (muestra de)", "Revisar lo que está a mano («las historias de encima de la mesa»). No vale para auditar: suele dar resultados más favorables que la realidad.", ""],
+    ["Correlación intraclase (ICC)", "Cuánto se parecen entre sí los casos de un mismo conglomerado, de 0 (nada) a 1 (idénticos). Cuanto mayor, más muestra hace falta al muestrear por conglomerados.", "conglomerados"],
+    ["Criterio", "Regla de buena práctica que debería cumplirse en cada caso (por ejemplo, «consta la valoración del riesgo de caídas en las primeras 24 horas»).", ""],
+    ["Curva característica operativa (curva OC)", "Gráfico de LQAS que muestra, para cada cumplimiento real posible, la probabilidad de que la muestra salga verde. Cuanto más empinada entre el umbral y el estándar, mejor separa los servicios buenos de los malos.", "lqas"],
+    ["Desviación típica (σ)", "Cuánto se separan los valores de su media, «por término medio». Si no la conoces: (valor alto habitual − valor bajo habitual) ÷ 4.", "media"],
+    ["Diferencia mínima relevante (Δ)", "La diferencia más pequeña entre dos grupos que merecería la pena detectar por su importancia clínica o de gestión. No es la que esperas, sino la mínima que importaría.", "dos-medias"],
+    ["Efecto de diseño (DEFF)", "Cuántas veces más muestra hace falta por revisar casos agrupados en conglomerados en lugar de sueltos. DEFF = 1 + (m − 1) × ICC.", "conglomerados"],
+    ["Error α (en LQAS)", "Falsa alarma: probabilidad de que salga rojo un servicio que en realidad cumple el estándar. Lo habitual es 5 %.", "lqas"],
+    ["Error α (en comparaciones)", "Probabilidad de dar por real una diferencia que no existe (falso positivo, error tipo I). Lo habitual es 5 %.", "dos-proporciones"],
+    ["Error β (en LQAS)", "Fuego sin alarma: probabilidad de que salga verde un servicio que está en el umbral o peor. Lo habitual es 20 % o 10 %.", "lqas"],
+    ["Error β (en comparaciones)", "Probabilidad de no detectar una diferencia que sí existe (falso negativo, error tipo II). Potencia = 1 − β.", "dos-proporciones"],
+    ["Estándar (AQL)", "En LQAS, el cumplimiento que queremos tener. Un servicio que lo alcanza debería salir verde.", "lqas"],
+    ["Estimar frente a decidir", "Estimar es dar una cifra con su horquilla (la báscula: muchos casos). Decidir es saber si se alcanza un estándar (el arco del aeropuerto: pocos casos, con LQAS).", ""],
+    ["Estrato", "Subgrupo de la población que puede comportarse distinto (turno de mañana, tarde y noche; distintas unidades). En el muestreo estratificado se sortean casos dentro de cada uno.", "estratos"],
+    ["Hipergeométrica (distribución)", "Modelo para contar cuántos casos cumplen cuando se sortea sin reposición de un lote de tamaño conocido. Lo usa LQAS cuando indicas N; con lotes pequeños pide menos casos que la binomial.", "lqas"],
+    ["Indicador", "Criterio convertido en algo que se puede contar (por ejemplo, «% de pacientes con la valoración de caídas registrada»). Es como un termómetro: no cura, pero dice si hay que preocuparse.", ""],
+    ["Indicador centinela", "Indicador en el que un solo caso ya es un problema grave (cirugía en lugar equivocado). No se muestrea: se vigilan todos los casos.", ""],
+    ["Indicador compuesto", "Resume varios criterios en un solo número. El de porcentaje simple suma cumplimientos y oportunidades de todos los criterios. Se presenta siempre con su desglose.", "compuesto"],
+    ["Intervalo de confianza (horquilla)", "Rango de valores entre los que, con la confianza elegida, está el valor real. Cuanto más pequeña la muestra, más ancho.", "proporcion"],
+    ["Kappa de Cohen (κ)", "Medida de concordancia entre dos observadores que descuenta el acuerdo debido al azar. Va de −1 a 1; en auditoría se suele pedir al menos 0,60.", "concordancia"],
+    ["Lote", "En LQAS, el conjunto de casos que se quiere juzgar (la «caja de galletas»): por ejemplo, los ingresos de una unidad en un semestre.", "lqas"],
+    ["LQAS", "Muestreo para la aceptación de lotes: con pocos casos decide si un servicio alcanza un estándar (verde) o hay que investigar (rojo). Es un semáforo, no una báscula.", "lqas"],
+    ["Margen de error (precisión, e)", "La mitad de la anchura de la horquilla: el «±» que aceptas. Doble de precisión cuesta cuatro veces más casos.", "proporcion"],
+    ["Media", "Promedio de una medición numérica (tiempo de espera, estancia…). Puede maquillar: a veces es mejor un porcentaje («% que esperan más de 30 minutos»).", "media"],
+    ["Muestra", "Los casos que realmente se revisan, elegidos entre todos los posibles (el universo).", ""],
+    ["Número de decisión (c)", "En LQAS, el mínimo de casos que deben cumplir en la muestra para que salga verde. La «nota mínima para aprobar».", "lqas"],
+    ["Odds ratio (OR)", "Medida de efecto: (p₂ / (1 − p₂)) ÷ (p₁ / (1 − p₁)). Es habitual en artículos; solo se parece al riesgo relativo cuando los porcentajes son pequeños.", "dos-proporciones"],
+    ["Oportunidad", "En un indicador compuesto, cada ocasión en la que se podía haber actuado bien (un criterio aplicable a un paciente). Es el denominador del compuesto.", "compuesto"],
+    ["PABAK", "Kappa ajustado por prevalencia y sesgo (2 × acuerdo observado − 1). Ayuda a interpretar el kappa cuando casi todos los casos están en la misma categoría.", "concordancia"],
+    ["Pérdidas", "Casos que no se podrán analizar (historia no localizable, dato ausente). Se compensan aumentando la muestra: n ÷ (1 − pérdidas).", ""],
+    ["Pilotaje", "Probar un indicador con unas pocas historias (30–50) revisadas por dos personas antes de auditar, para aclarar términos ambiguos.", "concordancia"],
+    ["Población finita (corrección)", "Si la muestra es una parte importante de la población, hacen falta menos casos. Se aplica al indicar N.", "proporcion"],
+    ["Potencia (1 − β)", "Probabilidad de detectar una diferencia que de verdad existe. Lo mínimo habitual es 80 %: de cada 5 diferencias reales detectarías 4.", "dos-proporciones"],
+    ["Proporción (porcentaje)", "Casos que cumplen entre los evaluados. Es el indicador más usado en auditoría de historias (cumple / no cumple).", "proporcion"],
+    ["Riesgo relativo (RR)", "Cociente entre el riesgo de un grupo y el de otro (p₂ ÷ p₁). RR = 0,5: el riesgo se reduce a la mitad; RR = 1: sin efecto.", "dos-proporciones"],
+    ["Sistemático (muestreo)", "Se calcula un salto k = N ÷ n, se arranca al azar y se toma un caso cada k. Cómodo, pero cuidado si el listado tiene un patrón que se repite.", ""],
+    ["Tamaño de muestra (n)", "Número de casos que hay que revisar para responder a la pregunta con la precisión o los errores elegidos. Siempre se redondea hacia arriba.", ""],
+    ["Umbral (LQL)", "En LQAS, el cumplimiento por debajo del cual la situación es claramente mala: la línea roja. Un servicio en el umbral debería salir rojo.", "lqas"],
+    ["Unidad de estudio", "Lo que se mira en cada caso: una historia clínica, un episodio de urgencias, una intervención.", ""],
+    ["Universo (marco muestral)", "Todos los casos entre los que se puede elegir: por ejemplo, las historias de pacientes con EPOC del centro en un año. Su tamaño es N.", ""],
+    ["Valor z", "Número que corresponde al nivel de confianza en la distribución normal: 1,96 para el 95 %, 2,58 para el 99 %. Aparece en todas las fórmulas.", ""],
+    ["Wilson (intervalo de)", "Forma de calcular la horquilla de un porcentaje que funciona bien también con muestras pequeñas o porcentajes extremos. La usa «Ya tengo los resultados».", "proporcion"],
+    ["Zona gris", "En LQAS, cumplimientos entre el umbral y el estándar: la muestra puede salir verde o roja. LQAS no garantiza la clasificación ahí.", "lqas"]
+  ];
+  const sinAcentos = t => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  function renderGlosario() {
+    current = null; document.title = "Tamaño Muestral · Glosario";
+    view.innerHTML = `
+      <h1 class="page-title">Glosario</h1>
+      <p class="page-lead">Los términos que usa la aplicación, explicados en lenguaje llano. Toca el enlace de cada término para ir a la calculadora donde se usa.</p>
+      <div class="input-wrap glos-buscar"><input id="glos-q" type="search" autocomplete="off" placeholder="Buscar un término (p. ej. kappa, potencia, lote)…" aria-label="Buscar en el glosario" /></div>
+      <p class="step-note" id="glos-n"></p>
+      <dl class="glos-lista" id="glos-lista">${GLOSARIO.map(([t, d, id]) => {
+        const c = id && CALCS.find(x => x.id === id);
+        return `<div class="glos-item" data-t="${esc(sinAcentos(t + " " + d))}"><dt>${esc(t)}</dt><dd>${esc(d)}${c ? ` <a class="glos-link" href="#/${c.id}">→ ${esc(c.short)}</a>` : ""}</dd></div>`;
+      }).join("")}</dl>`;
+    const q = $("#glos-q"), n = $("#glos-n");
+    const filtra = () => { const s = sinAcentos(q.value.trim()); let k = 0; $$(".glos-item").forEach(it => { const v = !s || it.dataset.t.includes(s); it.hidden = !v; if (v) k++; }); n.textContent = s ? `${k} de ${GLOSARIO.length} términos` : `${GLOSARIO.length} términos`; };
+    q.addEventListener("input", filtra); filtra();
+  }
+
   // ---------- Enlaces con los datos ya puestos ----------
   // El estado de la calculadora viaja en el propio enlace (#/id?d=<JSON>). Solo son números y textos
   // que escribe el usuario (sin datos de pacientes). Al abrirlo se valida y se limpia la dirección.
@@ -1338,7 +1500,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
 
   // ---------- Enrutado ----------
   function buildNav() {
-    $("#calc-nav").innerHTML = `<a href="#/" data-r="">Inicio</a>` + CALCS.map(c => `<a href="#/${c.id}" data-r="${c.id}">${esc(c.short)}</a>`).join("");
+    $("#calc-nav").innerHTML = `<a href="#/" data-r="">Inicio</a>` + CALCS.map(c => `<a href="#/${c.id}" data-r="${c.id}">${esc(c.short)}</a>`).join("") + `<a href="#/glosario" data-r="glosario">Glosario</a>`;
   }
   function route() {
     const [id, qs] = (location.hash.replace(/^#\/?/, "") || "").split("?");
@@ -1351,9 +1513,9 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
     }
     const informe = !!c && /(^|&)informe=1(&|$)/.test(qs || "");
     document.body.classList.toggle("ver-informe", informe);
-    if (c) renderCalc(c); else renderHome();
+    if (c) renderCalc(c); else if (id === "glosario") renderGlosario(); else renderHome();
     if (informe) { $$("details.steps").forEach(d => { d.open = true; }); if (esIOS()) prepararPDF(); }
-    $$("#calc-nav a").forEach(a => a.classList.toggle("active", a.dataset.r === (c ? c.id : "")));
+    $$("#calc-nav a").forEach(a => a.classList.toggle("active", a.dataset.r === (c ? c.id : id === "glosario" ? "glosario" : "")));
     const act = $("#calc-nav a.active"); if (act && act.scrollIntoView) act.scrollIntoView({ block: "nearest", inline: "center" });
     window.scrollTo(0, 0);
   }

@@ -277,9 +277,20 @@
     return out;
   }
 
+  // Muestreo por conglomerados (plantas, consultas…): efecto de diseño DEFF = 1 + (m − 1)·ICC (Kish).
+  // n = tamaño calculado como si fuera muestreo aleatorio simple; m = casos por conglomerado.
+  function clusterSample(n, m, icc) {
+    const deff = 1 + (m - 1) * icc, nAdj = ceilN(n * deff), k = ceilN(nAdj / m);
+    return { deff, nAdj, k, total: k * m };
+  }
+
+  // Proporción del grupo 2 a partir de p1 y de un riesgo relativo (RR) o una odds ratio (OR).
+  function p2DesdeRR(p1, rr) { return rr * p1; }
+  function p2DesdeOR(p1, or) { return or * p1 / (1 - p1 + or * p1); }
+
   const api = { ceilN, erfc, normCdf, normInv, zAlpha, lgamma, logChoose, binomPmf, hyperPmf, binomCdf, hyperCdf,
     finiteCorrection, withLoss, sampleProportion, sampleMean, twoProportions, twoMeans,
-    lqas, lqasBestRule, lqasOC, lqasPAccept, composite, wilson, kappa, allocate };
+    lqas, lqasBestRule, lqasOC, lqasPAccept, composite, wilson, kappa, allocate, clusterSample, p2DesdeRR, p2DesdeOR };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.Stats = api;
 })(typeof window !== "undefined" ? window : globalThis);
