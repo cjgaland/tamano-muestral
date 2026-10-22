@@ -10,8 +10,10 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.14";
+  const APP_VERSION = "2026.15";
   const NOVEDADES = [
+    { version: "2026.15", fecha: "Octubre 2026", titulo: "Nueva app hermana: AMFE", cambios: [
+      "Nuevo acceso a la app hermana «AMFE» (Análisis Modal de Fallos y Efectos), en la portada y en «Acerca de»: para analizar los fallos de un proceso paso a paso, puntuarlos con G·O·D e IPR y decidir cuáles atajar primero."] },
     { version: "2026.14", fecha: "Octubre 2026", titulo: "Nueva app hermana: Auditorías", cambios: [
       "Nuevo acceso a la app hermana «Auditorías» (en la portada y en «Acerca de»): para planificar, realizar, informar y hacer el seguimiento de una auditoría completa, con el cálculo de la muestra y el LQAS integrados en su diseño."] },
     { version: "2026.13", fecha: "Octubre 2026", titulo: "Enlace a la app Indicadores", cambios: [
@@ -1189,6 +1191,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       <a class="glos-portada" href="#/glosario"><span><b>Glosario</b> · ${GLOSARIO.length} términos explicados en lenguaje llano, con buscador</span><span class="guide-go">›</span></a>
       <a class="glos-portada" href="https://cjgaland.github.io/indicadores-calidad/" target="_blank" rel="noopener"><span><b>Indicadores ↗</b> · la app hermana: crea, define y comprueba tus indicadores de calidad paso a paso, y vuelve aquí para calcular la muestra</span><span class="guide-go">›</span></a>
       <a class="glos-portada" href="https://cjgaland.github.io/auditorias/" target="_blank" rel="noopener"><span><b>Auditorías ↗</b> · la app hermana: planifica, realiza e informa una auditoría completa, del Mapa de Riesgos al plan de mejora, con la muestra y el LQAS integrados</span><span class="guide-go">›</span></a>
+      <a class="glos-portada" href="https://cjgaland.github.io/amfe/" target="_blank" rel="noopener"><span><b>AMFE ↗</b> · la app hermana: analiza los fallos de un proceso paso a paso, con G·O·D, IPR y priorización de los fallos que hay que atajar primero</span><span class="guide-go">›</span></a>
       <div class="glossary"><details class="gloss"><summary>Conceptos clave en 1 minuto</summary><dl class="gloss-body">
         <dt>Confianza (1 − α)</dt><dd>Seguridad con que el intervalo contiene el valor real. 95 % es lo habitual.</dd>
         <dt>Precisión (e)</dt><dd>Mitad de la anchura del intervalo: el «±» que toleras.</dd>

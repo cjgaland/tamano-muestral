@@ -82,3 +82,6 @@ Sistema de respaldo local con rotación. Estructura (desde 2026-10-21): `Desktop
 
 ## Enlace a Auditorías (v2026.14, 2026-10-21)
 App hermana nueva: Auditorías (`/Users/Trabajo/Desktop/Auditorías/Aplicación/`, https://cjgaland.github.io/auditorias/). Enlazada desde la portada (`.glos-portada`, tras la de Indicadores) y desde «Acerca de».
+
+## Enlace a AMFE (v2026.15, 2026-10-22)
+App hermana nueva: AMFE (`/Users/Trabajo/Desktop/AMFE/Aplicación/`, https://cjgaland.github.io/amfe/). Enlazada desde la portada (`.glos-portada`, tras la de Auditorías) y desde «Acerca de».
