@@ -1,6 +1,6 @@
 # CLAUDE.md — Tamaño Muestral
 
-> Documento común a todas las apps (lista, carpetas, identidad visual e intercambio de datos): `/Users/Trabajo/Desktop/Ecosistema Calidad/ECOSISTEMA.md`.
+> Documento común a todas las apps (lista, carpetas, identidad visual e intercambio de datos): `/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/ECOSISTEMA.md`.
 
 Guía de referencia para el desarrollo asistido por IA. Léela antes de proponer cambios.
 
@@ -69,11 +69,11 @@ Node v26 (Homebrew). Si `node` fallara por una dylib de Homebrew (`libsimdjson`)
 - `sw.js` ya NO hace `skipWaiting` al instalar: la versión nueva espera y la app muestra el aviso «Nueva versión disponible · Actualizar» (mensaje `SKIP_WAITING`, recarga en `controllerchange`). Mismo patrón que DosisPed.
 
 ## 7. Copias de seguridad locales
-Sistema de respaldo local con rotación. Estructura (desde 2026-10-21): `Desktop/Tamaño Muestral/Aplicación/` contiene `Aplicación/` (este repositorio) y `Backup/` (fuera del repositorio), igual que Auditorías.
+Sistema de respaldo local con rotación. Estructura (desde 2026-10-21): `Desktop/Calidad&Seguridad/Ecosistema Calidad/Tamaño Muestral/Aplicación/` contiene `Aplicación/` (este repositorio) y `Backup/` (fuera del repositorio), igual que Auditorías.
 - Cada copia es una carpeta `Backup/Copia_Seguridad_TamanoMuestral_DD_MM_YYYY-HH_MM` con el proyecto completo (rsync -a), excluyendo `Backup`, `.git`, dependencias/caché si existen y datos personales/secretos (`*.csv`, `.env*`).
 - Se conservan solo las **5 copias más recientes**; al crear una nueva se borra la más antigua.
 - Disparadores: "Haz una copia" / "Copia de seguridad", o antes de publicar.
-- Script: skill personal `app-copia_seguridad` (`bash ~/.claude/skills/app-copia_seguridad/scripts/copia_seguridad.sh --root "/Users/Trabajo/Desktop/Tamaño Muestral" --name TamanoMuestral --exclude .claude`).
+- Script: skill personal `app-copia_seguridad` (`bash ~/.claude/skills/app-copia_seguridad/scripts/copia_seguridad.sh --root "/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Tamaño Muestral" --name TamanoMuestral --exclude .claude`).
 
 ## 8. Publicación
 - Repositorio público `cjgaland/tamano-muestral`; GitHub Pages desde `main` (raíz): https://cjgaland.github.io/tamano-muestral/
@@ -81,13 +81,13 @@ Sistema de respaldo local con rotación. Estructura (desde 2026-10-21): `Desktop
 - Comprobado en la web real (v2026.05): el SW cachea los 15 archivos y el aviso de actualización recarga a la versión nueva al pulsar «Actualizar». Solo se recarga si el usuario lo pide (no en la primera instalación).
 
 ## Enlace a Auditorías (v2026.14, 2026-10-21)
-App hermana nueva: Auditorías (`/Users/Trabajo/Desktop/Auditorías/Aplicación/`, https://cjgaland.github.io/auditorias/). Enlazada desde la portada (`.glos-portada`, tras la de Indicadores) y desde «Acerca de».
+App hermana nueva: Auditorías (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Auditorías/Aplicación/`, https://cjgaland.github.io/auditorias/). Enlazada desde la portada (`.glos-portada`, tras la de Indicadores) y desde «Acerca de».
 
 ## Enlace a AMFE (v2026.15, 2026-10-22)
-App hermana nueva: AMFE (`/Users/Trabajo/Desktop/AMFE/Aplicación/`, https://cjgaland.github.io/amfe/). Enlazada desde la portada (`.glos-portada`, tras la de Auditorías) y desde «Acerca de».
+App hermana nueva: AMFE (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/AMFE/Aplicación/`, https://cjgaland.github.io/amfe/). Enlazada desde la portada (`.glos-portada`, tras la de Auditorías) y desde «Acerca de».
 
 ## Enlace a Flujograma y DAFO · CAME (v2026.16, 2026-10-22)
-Apps hermanas nuevas: Flujograma (`/Users/Trabajo/Desktop/Flujograma/Aplicación/`, https://cjgaland.github.io/flujograma/) y DAFO · CAME (`/Users/Trabajo/Desktop/DAFO/Aplicación/`, https://cjgaland.github.io/dafo/). Enlazadas desde la portada (`.glos-portada`, tras la de AMFE) y desde «Acerca de».
+Apps hermanas nuevas: Flujograma (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Flujograma/Aplicación/`, https://cjgaland.github.io/flujograma/) y DAFO · CAME (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/DAFO/Aplicación/`, https://cjgaland.github.io/dafo/). Enlazadas desde la portada (`.glos-portada`, tras la de AMFE) y desde «Acerca de».
 
 ## Enlace a Mapa de Riesgos (v2026.17, 2026-10-23)
-App hermana nueva: Mapa de Riesgos (`/Users/Trabajo/Desktop/Mapa de Riesgos/Aplicación/`, https://cjgaland.github.io/mapa-riesgos/). Enlazada desde la portada (`.glos-portada`, tras la de DAFO · CAME) y desde «Acerca de».
+App hermana nueva: Mapa de Riesgos (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Mapa de Riesgos/Aplicación/`, https://cjgaland.github.io/mapa-riesgos/). Enlazada desde la portada (`.glos-portada`, tras la de DAFO · CAME) y desde «Acerca de».
