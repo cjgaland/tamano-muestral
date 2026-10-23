@@ -88,3 +88,6 @@ App hermana nueva: AMFE (`/Users/Trabajo/Desktop/AMFE/Aplicación/`, https://cjg
 
 ## Enlace a Flujograma y DAFO · CAME (v2026.16, 2026-10-22)
 Apps hermanas nuevas: Flujograma (`/Users/Trabajo/Desktop/Flujograma/Aplicación/`, https://cjgaland.github.io/flujograma/) y DAFO · CAME (`/Users/Trabajo/Desktop/DAFO/Aplicación/`, https://cjgaland.github.io/dafo/). Enlazadas desde la portada (`.glos-portada`, tras la de AMFE) y desde «Acerca de».
+
+## Enlace a Mapa de Riesgos (v2026.17, 2026-10-23)
+App hermana nueva: Mapa de Riesgos (`/Users/Trabajo/Desktop/Mapa de Riesgos/Aplicación/`, https://cjgaland.github.io/mapa-riesgos/). Enlazada desde la portada (`.glos-portada`, tras la de DAFO · CAME) y desde «Acerca de».

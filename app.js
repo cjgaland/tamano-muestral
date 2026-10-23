@@ -10,8 +10,10 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.16";
+  const APP_VERSION = "2026.17";
   const NOVEDADES = [
+    { version: "2026.17", fecha: "Octubre 2026", titulo: "Nueva app hermana: Mapa de Riesgos", cambios: [
+      "Nuevo acceso a la app hermana «Mapa de Riesgos», en la portada y en «Acerca de»: elabora paso a paso el mapa de riesgos de un proceso, del flujograma y el AMFE al mapa con los riesgos coloreados por su IPR y el documento final."] },
     { version: "2026.16", fecha: "Octubre 2026", titulo: "Nuevas apps hermanas: Flujograma y DAFO · CAME", cambios: [
       "Nuevos accesos a las apps hermanas «Flujograma» (escribe los pasos de un proceso y la app dibuja el diagrama) y «DAFO · CAME» (análisis DAFO de una unidad y plan de acción), en la portada y en «Acerca de»."] },
     { version: "2026.15", fecha: "Octubre 2026", titulo: "Nueva app hermana: AMFE", cambios: [
@@ -1196,6 +1198,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       <a class="glos-portada" href="https://cjgaland.github.io/amfe/" target="_blank" rel="noopener"><span><b>AMFE ↗</b> · la app hermana: analiza los fallos de un proceso paso a paso, con G·O·D, IPR y priorización de los fallos que hay que atajar primero</span><span class="guide-go">›</span></a>
       <a class="glos-portada" href="https://cjgaland.github.io/flujograma/" target="_blank" rel="noopener"><span><b>Flujograma ↗</b> · la app hermana: escribe los pasos de un proceso y la app dibuja su flujograma, con los puntos críticos donde conviene medir</span><span class="guide-go">›</span></a>
       <a class="glos-portada" href="https://cjgaland.github.io/dafo/" target="_blank" rel="noopener"><span><b>DAFO · CAME ↗</b> · la app hermana: analiza debilidades, amenazas, fortalezas y oportunidades de tu unidad y conviértelas en un plan de acción con indicadores</span><span class="guide-go">›</span></a>
+      <a class="glos-portada" href="https://cjgaland.github.io/mapa-riesgos/" target="_blank" rel="noopener"><span><b>Mapa de Riesgos ↗</b> · la app hermana: elabora paso a paso el mapa de riesgos de un proceso: subprocesos, flujograma, puntos críticos, AMFE, acciones y el mapa con los riesgos coloreados por su IPR, con el documento final</span><span class="guide-go">›</span></a>
       <div class="glossary"><details class="gloss"><summary>Conceptos clave en 1 minuto</summary><dl class="gloss-body">
         <dt>Confianza (1 − α)</dt><dd>Seguridad con que el intervalo contiene el valor real. 95 % es lo habitual.</dd>
         <dt>Precisión (e)</dt><dd>Mitad de la anchura del intervalo: el «±» que toleras.</dd>
