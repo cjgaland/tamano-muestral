@@ -94,3 +94,6 @@ App hermana nueva: Mapa de Riesgos (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ec
 
 ## Enlace a Rondas de Seguridad (v2026.18, 2026-10-24)
 App hermana nueva: Rondas de Seguridad (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Auditorías/Rondas de Seguridad/Aplicación/`, https://cjgaland.github.io/rondas-seguridad/). Enlazada desde la portada (`.glos-portada`, tras la de Mapa de Riesgos) y desde «Acerca de» (bloque propio, antes del de DAFO · CAME). Publicada el 2026-10-25.
+
+## Herramientas de apoyo y portal (v2026.19, 2026-10-25)
+**v2026.19 (2026-10-25, sin publicar)**: en «Acerca de», grupo «Herramientas de apoyo» (Anonimizador RGPD https://cjgaland.github.io/anonimizador-rgpd-web/ y Normalizador Bibliográfico https://cjgaland.github.io/normalizador-bibliografico/, con su propia imagen y sin intercambio de datos) y enlace al portal del ecosistema (https://cjgaland.github.io/, carpeta `Ecosistema Calidad/Portal/`).
