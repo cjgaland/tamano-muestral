@@ -4,7 +4,7 @@
 //  Al cambiar cualquier archivo, incrementa CACHE_NAME.
 // ============================================================
 
-const CACHE_NAME = "tamano-muestral-v20";
+const CACHE_NAME = "tamano-muestral-v21";
 
 const ASSETS = [
   "./",
@@ -34,7 +34,9 @@ self.addEventListener("message", event => {
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+      // Solo las cachés de esta app: las demás apps del ecosistema comparten el
+      // mismo origen (cjgaland.github.io) y sus copias sin conexión no se tocan.
+      .then(keys => Promise.all(keys.filter(k => k.startsWith("tamano-muestral-") && k !== CACHE_NAME).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
