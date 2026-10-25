@@ -93,4 +93,4 @@ Apps hermanas nuevas: Flujograma (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecos
 App hermana nueva: Mapa de Riesgos (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Mapa de Riesgos/Aplicación/`, https://cjgaland.github.io/mapa-riesgos/). Enlazada desde la portada (`.glos-portada`, tras la de DAFO · CAME) y desde «Acerca de».
 
 ## Enlace a Rondas de Seguridad (v2026.18, 2026-10-24)
-App hermana nueva: Rondas de Seguridad (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Auditorías/Rondas de Seguridad/Aplicación/`, https://cjgaland.github.io/rondas-seguridad/). Enlazada desde la portada (`.glos-portada`, tras la de Mapa de Riesgos) y desde «Acerca de» (bloque propio, antes del de DAFO · CAME). Sin publicar.
+App hermana nueva: Rondas de Seguridad (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Auditorías/Rondas de Seguridad/Aplicación/`, https://cjgaland.github.io/rondas-seguridad/). Enlazada desde la portada (`.glos-portada`, tras la de Mapa de Riesgos) y desde «Acerca de» (bloque propio, antes del de DAFO · CAME). Publicada el 2026-10-25.
