@@ -98,3 +98,4 @@ App hermana nueva: Rondas de Seguridad (`/Users/Trabajo/Desktop/Calidad&Segurida
 ## Herramientas de apoyo y portal (v2026.19, 2026-10-25)
 **v2026.19 (2026-10-25, publicada el 2026-10-25)**: en «Acerca de», grupo «Herramientas de apoyo» (Anonimizador RGPD https://cjgaland.github.io/anonimizador-rgpd-web/ y Normalizador Bibliográfico https://cjgaland.github.io/normalizador-bibliografico/, con su propia imagen y sin intercambio de datos) y enlace al portal del ecosistema (https://cjgaland.github.io/, carpeta `Ecosistema Calidad/Portal/`).
 - **v2026.21 (2026-10-25, publicada el 2026-10-25)**: Legibilidad (https://cjgaland.github.io/legibilidad/) se suma al grupo «Herramientas de apoyo» de «Acerca de».
+- **v2026.22 (2026-10-26)**: enlace a la nueva app hermana Lectura Crítica (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/LecturaCritica/Aplicación/`, https://cjgaland.github.io/lectura-critica/) en la portada y en «Acerca de».

@@ -10,8 +10,10 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.21";
+  const APP_VERSION = "2026.22";
   const NOVEDADES = [
+    { version: "2026.22", fecha: "Octubre 2026", titulo: "Nueva app hermana: Lectura Crítica", cambios: [
+      "Enlace a la nueva app hermana Lectura Crítica en la portada y en «Acerca de»: lee críticamente un artículo paso a paso (plantillas de CASPe con preguntas propias, calculadoras y un veredicto con semáforo) antes de cambiar la práctica."] },
     { version: "2026.21", fecha: "Octubre 2026", titulo: "Nueva herramienta de apoyo: Legibilidad", cambios: [
       "En «Acerca de», el grupo «Herramientas de apoyo» suma Legibilidad: mide con el índice de Flesch-Szigriszt y la escala INFLESZ si un texto para pacientes se entiende y te dice qué cambiar."] },
     { version: "2026.20", fecha: "Octubre 2026", titulo: "La copia sin conexión de las otras apps ya no se borra", cambios: [
@@ -1209,6 +1211,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       <a class="glos-portada" href="https://cjgaland.github.io/dafo/" target="_blank" rel="noopener"><span><b>DAFO · CAME ↗</b> · la app hermana: analiza debilidades, amenazas, fortalezas y oportunidades de tu unidad y conviértelas en un plan de acción con indicadores</span><span class="guide-go">›</span></a>
       <a class="glos-portada" href="https://cjgaland.github.io/mapa-riesgos/" target="_blank" rel="noopener"><span><b>Mapa de Riesgos ↗</b> · la app hermana: elabora paso a paso el mapa de riesgos de un proceso: subprocesos, flujograma, puntos críticos, AMFE, acciones y el mapa con los riesgos coloreados por su IPR, con el documento final</span><span class="guide-go">›</span></a>
       <a class="glos-portada" href="https://cjgaland.github.io/rondas-seguridad/" target="_blank" rel="noopener"><span><b>Rondas de Seguridad ↗</b> · la app hermana: programa y haz las rondas de seguridad de una unidad, a pie de cama, y descubre lo que falla una y otra vez</span><span class="guide-go">›</span></a>
+      <a class="glos-portada" href="https://cjgaland.github.io/lectura-critica/" target="_blank" rel="noopener"><span><b>Lectura Crítica ↗</b> · la app hermana: lee críticamente un artículo con las plantillas de CASPe; sus calculadoras te traen aquí cuando el intervalo de confianza es demasiado ancho</span><span class="guide-go">›</span></a>
       <div class="glossary"><details class="gloss"><summary>Conceptos clave en 1 minuto</summary><dl class="gloss-body">
         <dt>Confianza (1 − α)</dt><dd>Seguridad con que el intervalo contiene el valor real. 95 % es lo habitual.</dd>
         <dt>Precisión (e)</dt><dd>Mitad de la anchura del intervalo: el «±» que toleras.</dd>
