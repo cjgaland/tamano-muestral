@@ -80,6 +80,14 @@ Sistema de respaldo local con rotación. Estructura (desde 2026-10-21): `Desktop
 - Pasos para publicar una versión: (1) copia de seguridad; (2) nueva entrada en `NOVEDADES` + `APP_VERSION`; (3) mismos `?v=` en index.html; (4) subir `CACHE_NAME` en sw.js; (5) `node tests/stats.test.mjs`; (6) commit y `git push`. Pages tarda ~1 min. Los usuarios con la app abierta verán «Nueva versión disponible».
 - Comprobado en la web real (v2026.05): el SW cachea los 15 archivos y el aviso de actualización recarga a la versión nueva al pulsar «Actualizar». Solo se recarga si el usuario lo pide (no en la primera instalación).
 
+## 8 bis. Edición independiente (desde el 2026-10-26)
+Hay una versión de Tamaño Muestral para regalar sola, sin enlaces al resto del ecosistema: `../Edición independiente/` (repositorio git propio; se publicará en `herramientas-calidad/tamano-muestral` → https://herramientas-calidad.github.io/tamano-muestral/, solo con permiso del autor). **No se edita a mano**: la fabrica `node generar.mjs tamano-muestral` desde `../../Ediciones independientes/` (diseño en `DISEÑO_EDICIONES.md`, uso en `LEEME.md`, ficha en `apps/tamano-muestral.json`).
+- **Marcas** (comentarios; no cambian nada en la app del ecosistema): `[eco]`…`[/eco]` = solo ecosistema, se quita en la edición; `/* [ind]` … `[/ind] */` (o `<!-- [ind]` … `[/ind] -->`) = solo edición, se descomenta. En línea propia o dentro de una línea (`/*[eco]*/…/*[/eco]*/`, `<!--[eco]-->…<!--[/eco]-->`). Dentro de un texto HTML de app.js, usar la forma `<!-- -->`. Los tests que se pasan sobre la edición también pasan por las marcas.
+- **Al añadir** un enlace a otra app, un «Traer de…», una mención a la Guía, un texto sobre pasar datos «en el mismo navegador» o una entrada de NOVEDADES que solo hable del ecosistema: rodearlo con `[eco]` y, si hace falta, poner su alternativa con `[ind]`. Una clave nueva de `localStorage` se añade a `claves` en la ficha. Si se olvida, el generador o su verificación fallan y dicen dónde.
+- Comentarios y rótulos sueltos se cambian en la ficha (`reemplazos`, cada uno con las veces que debe aparecer).
+- **También va dentro de la edición de Indicadores**, en su subcarpeta `tamano-muestral/` (con prefijo `ei-ind-tm-`): Indicadores la abre con los datos puestos (`#/<calculadora>?d=…`). Cambiar ese formato de enlace obliga a revisar Indicadores.
+- En la edición: prefijo de datos `ei-tammuestral-` y caché `ei-tamano-muestral-` (`prefijoCache` en la ficha), sin tests, sin `CLAUDE.md` y con su propio README (`apps/tamano-muestral.README.md`).
+
 ## Enlace a Auditorías (v2026.14, 2026-10-21)
 App hermana nueva: Auditorías (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Auditorías/Aplicación/`, https://cjgaland.github.io/auditorias/). Enlazada desde la portada (`.glos-portada`, tras la de Indicadores) y desde «Acerca de».
 
@@ -99,3 +107,5 @@ App hermana nueva: Rondas de Seguridad (`/Users/Trabajo/Desktop/Calidad&Segurida
 **v2026.19 (2026-10-25, publicada el 2026-10-25)**: en «Acerca de», grupo «Herramientas de apoyo» (Anonimizador RGPD https://cjgaland.github.io/anonimizador-rgpd-web/ y Normalizador Bibliográfico https://cjgaland.github.io/normalizador-bibliografico/, con su propia imagen y sin intercambio de datos) y enlace al portal del ecosistema (https://cjgaland.github.io/, carpeta `Ecosistema Calidad/Portal/`).
 - **v2026.21 (2026-10-25, publicada el 2026-10-25)**: Legibilidad (https://cjgaland.github.io/legibilidad/) se suma al grupo «Herramientas de apoyo» de «Acerca de».
 - **v2026.22 (2026-10-26)**: enlace a la nueva app hermana Lectura Crítica (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/LecturaCritica/Aplicación/`, https://cjgaland.github.io/lectura-critica/) en la portada y en «Acerca de».
+
+**2026-10-26 (sin cambio de versión)**: marcas `[eco]`/`[ind]` para la edición independiente (apartado 8 bis). La app del ecosistema no cambia.

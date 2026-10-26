@@ -12,6 +12,7 @@
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
   const APP_VERSION = "2026.22";
   const NOVEDADES = [
+    // [eco]
     { version: "2026.22", fecha: "Octubre 2026", titulo: "Nueva app hermana: Lectura Crítica", cambios: [
       "Enlace a la nueva app hermana Lectura Crítica en la portada y en «Acerca de»: lee críticamente un artículo paso a paso (plantillas de CASPe con preguntas propias, calculadoras y un veredicto con semáforo) antes de cambiar la práctica."] },
     { version: "2026.21", fecha: "Octubre 2026", titulo: "Nueva herramienta de apoyo: Legibilidad", cambios: [
@@ -33,6 +34,7 @@
       "Nuevo acceso a la app hermana «Auditorías» (en la portada y en «Acerca de»): para planificar, realizar, informar y hacer el seguimiento de una auditoría completa, con el cálculo de la muestra y el LQAS integrados en su diseño."] },
     { version: "2026.13", fecha: "Octubre 2026", titulo: "Enlace a la app Indicadores", cambios: [
       "Nuevo acceso a la app hermana «Indicadores» (en la portada y en «Acerca de»): para crear, definir y comprobar indicadores de calidad paso a paso. Desde ella se abre esta app con los datos del indicador ya puestos."] },
+    // [/eco]
     { version: "2026.12", fecha: "Octubre 2026", titulo: "Glosario, conglomerados y RR/OR", cambios: [
       "Glosario con 50 términos explicados en lenguaje llano, con buscador y enlaces a cada calculadora (en el menú y en la portada).",
       "Nueva calculadora de muestreo por conglomerados: cuánta muestra más hace falta al sortear plantas o centros y revisar varias historias en cada uno (efecto de diseño), y cuántos sortear.",
@@ -59,7 +61,12 @@
       "Toca una casilla y el plan se carga en la calculadora.",
       "El campo N se llama ahora «Tamaño del lote (población)», y su ayuda explica por qué un lote grande apenas cambia el número de historias."] },
     { version: "2026.05", fecha: "Octubre 2026", titulo: "Publicación en la web", cambios: [
+      // [eco]
       "Disponible en https://cjgaland.github.io/tamano-muestral/ e instalable en el móvil como aplicación.",
+      // [/eco]
+      /* [ind]
+      "Disponible en la web e instalable en el móvil como aplicación.",
+      [/ind] */
       "Corregida una recarga inesperada de la página en la primera visita."] },
     { version: "2026.04", fecha: "Octubre 2026", titulo: "Indicador compuesto y «Ponte a prueba»", cambios: [
       "Nueva calculadora: indicador compuesto de porcentaje simple (Σ cumplimientos ÷ Σ oportunidades), con desglose por criterio y avisos cuando el titular esconde una mala noticia.",
@@ -1204,6 +1211,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       </div>
       <div class="guide">${CALCS.map((c, i) => `<a class="guide-card" href="#/${c.id}"><span class="guide-num">${i + 1}</span><span><div class="guide-q">${esc(c.q)}</div><div class="guide-a">→ ${c.a}</div></span><span class="guide-go">›</span></a>`).join("")}</div>
       <a class="glos-portada" href="#/glosario"><span><b>Glosario</b> · ${GLOSARIO.length} términos explicados en lenguaje llano, con buscador</span><span class="guide-go">›</span></a>
+      <!-- [eco] -->
       <a class="glos-portada" href="https://cjgaland.github.io/indicadores-calidad/" target="_blank" rel="noopener"><span><b>Indicadores ↗</b> · la app hermana: crea, define y comprueba tus indicadores de calidad paso a paso, y vuelve aquí para calcular la muestra</span><span class="guide-go">›</span></a>
       <a class="glos-portada" href="https://cjgaland.github.io/auditorias/" target="_blank" rel="noopener"><span><b>Auditorías ↗</b> · la app hermana: planifica, realiza e informa una auditoría completa, del Mapa de Riesgos al plan de mejora, con la muestra y el LQAS integrados</span><span class="guide-go">›</span></a>
       <a class="glos-portada" href="https://cjgaland.github.io/amfe/" target="_blank" rel="noopener"><span><b>AMFE ↗</b> · la app hermana: analiza los fallos de un proceso paso a paso, con G·O·D, IPR y priorización de los fallos que hay que atajar primero</span><span class="guide-go">›</span></a>
@@ -1212,6 +1220,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       <a class="glos-portada" href="https://cjgaland.github.io/mapa-riesgos/" target="_blank" rel="noopener"><span><b>Mapa de Riesgos ↗</b> · la app hermana: elabora paso a paso el mapa de riesgos de un proceso: subprocesos, flujograma, puntos críticos, AMFE, acciones y el mapa con los riesgos coloreados por su IPR, con el documento final</span><span class="guide-go">›</span></a>
       <a class="glos-portada" href="https://cjgaland.github.io/rondas-seguridad/" target="_blank" rel="noopener"><span><b>Rondas de Seguridad ↗</b> · la app hermana: programa y haz las rondas de seguridad de una unidad, a pie de cama, y descubre lo que falla una y otra vez</span><span class="guide-go">›</span></a>
       <a class="glos-portada" href="https://cjgaland.github.io/lectura-critica/" target="_blank" rel="noopener"><span><b>Lectura Crítica ↗</b> · la app hermana: lee críticamente un artículo con las plantillas de CASPe; sus calculadoras te traen aquí cuando el intervalo de confianza es demasiado ancho</span><span class="guide-go">›</span></a>
+      <!-- [/eco] -->
       <div class="glossary"><details class="gloss"><summary>Conceptos clave en 1 minuto</summary><dl class="gloss-body">
         <dt>Confianza (1 − α)</dt><dd>Seguridad con que el intervalo contiene el valor real. 95 % es lo habitual.</dd>
         <dt>Precisión (e)</dt><dd>Mitad de la anchura del intervalo: el «±» que toleras.</dd>
