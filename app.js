@@ -10,9 +10,11 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.22";
+  const APP_VERSION = "2026.23";
   const NOVEDADES = [
     // [eco]
+    { version: "2026.23", fecha: "Octubre 2026", titulo: "Nueva app hermana: ACR · Ishikawa", cambios: [
+      "Enlace a la nueva app hermana ACR · Ishikawa en la portada y en «Acerca de»: busca las causas de fondo de un problema o de un incidente con el diagrama de Ishikawa (espina de pescado) y el análisis causa raíz, sin buscar culpables; sus acciones de mejora llevan indicador."] },
     { version: "2026.22", fecha: "Octubre 2026", titulo: "Nueva app hermana: Lectura Crítica", cambios: [
       "Enlace a la nueva app hermana Lectura Crítica en la portada y en «Acerca de»: lee críticamente un artículo paso a paso (plantillas de CASPe con preguntas propias, calculadoras y un veredicto con semáforo) antes de cambiar la práctica."] },
     { version: "2026.21", fecha: "Octubre 2026", titulo: "Nueva herramienta de apoyo: Legibilidad", cambios: [
@@ -1220,6 +1222,7 @@ ${lbl("lbl-u", xu, Y(paU), `Estándar ${nf(pU * 100, 1)} %`, `verde: ${nf(paU * 
       <a class="glos-portada" href="https://cjgaland.github.io/mapa-riesgos/" target="_blank" rel="noopener"><span><b>Mapa de Riesgos ↗</b> · la app hermana: elabora paso a paso el mapa de riesgos de un proceso: subprocesos, flujograma, puntos críticos, AMFE, acciones y el mapa con los riesgos coloreados por su IPR, con el documento final</span><span class="guide-go">›</span></a>
       <a class="glos-portada" href="https://cjgaland.github.io/rondas-seguridad/" target="_blank" rel="noopener"><span><b>Rondas de Seguridad ↗</b> · la app hermana: programa y haz las rondas de seguridad de una unidad, a pie de cama, y descubre lo que falla una y otra vez</span><span class="guide-go">›</span></a>
       <a class="glos-portada" href="https://cjgaland.github.io/lectura-critica/" target="_blank" rel="noopener"><span><b>Lectura Crítica ↗</b> · la app hermana: lee críticamente un artículo con las plantillas de CASPe; sus calculadoras te traen aquí cuando el intervalo de confianza es demasiado ancho</span><span class="guide-go">›</span></a>
+      <a class="glos-portada" href="https://cjgaland.github.io/acr-ishikawa/" target="_blank" rel="noopener"><span><b>ACR · Ishikawa ↗</b> · la app hermana: busca las causas de fondo de un problema o de un incidente (diagrama de Ishikawa y causa raíz), sin buscar culpables; sus acciones de mejora llevan indicador</span><span class="guide-go">›</span></a>
       <!-- [/eco] -->
       <div class="glossary"><details class="gloss"><summary>Conceptos clave en 1 minuto</summary><dl class="gloss-body">
         <dt>Confianza (1 − α)</dt><dd>Seguridad con que el intervalo contiene el valor real. 95 % es lo habitual.</dd>
